@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="FlowAI"/>
+<meta name="theme-color" content="#0f0e17"/>
+<title>FlowAI — Beat Procrastination with AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0f0e17;--bg2:#1a1927;--bg3:#232235;--surface:#2a2840;--surface2:#323050;
+  --accent:#7c6af7;--accent2:#a594f9;--accent3:#c4b8ff;
+  --coral:#ff6b6b;--coral2:#ff8e8e;--mint:#43d9a2;--mint2:#6ee7bc;
+  --amber:#ffd166;--amber2:#ffe099;
+  --text:#f0eeff;--text2:#b8b3d8;--text3:#7a748f;
+  --border:rgba(124,106,247,0.18);--border2:rgba(124,106,247,0.35);
+  --radius:14px;--radius-sm:8px;
+  --font-head:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;
+  --glow:0 0 20px rgba(124,106,247,0.25);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 20% 10%,rgba(124,106,247,0.12) 0%,transparent 60%),radial-gradient(ellipse 40% 50% at 80% 80%,rgba(67,217,162,0.07) 0%,transparent 60%);pointer-events:none;z-index:0}
+#root{position:relative;z-index:1}
+h1,h2,h3{font-family:var(--font-head)}
+::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:99px}
+input,select,textarea{font-family:var(--font-body);font-size:14px;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;width:100%;outline:none;transition:border-color .2s,box-shadow .2s;appearance:none;-webkit-appearance:none}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,106,247,0.2)}
+input[type=range]{padding:0;height:6px;background:var(--surface2);border:none;border-radius:99px;cursor:pointer;accent-color:var(--accent)}
+input[type=checkbox]{width:18px;height:18px;cursor:pointer;accent-color:var(--accent);flex-shrink:0}
+input[type=time]{padding:8px 10px;font-size:13px}
+input[type=time]::-webkit-calendar-picker-indicator{filter:invert(0.7)}
+input[type=date]::-webkit-calendar-picker-indicator{filter:invert(0.7)}
+label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;letter-spacing:0.3px;font-weight:500}
+select option{background:var(--bg2)}
+button{font-family:var(--font-body);cursor:pointer;border-radius:var(--radius-sm);border:1px solid var(--border2);background:transparent;color:var(--text2);padding:9px 18px;font-size:13px;font-weight:500;transition:all .18s}
+button:hover{background:var(--surface);color:var(--text);border-color:var(--accent2)}
+button:active{transform:scale(0.97)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#9b8dff);color:#fff;border-color:transparent;box-shadow:0 2px 16px rgba(124,106,247,0.4);font-weight:600}
+.btn-primary:hover{background:linear-gradient(135deg,#8b7aff,#b0a4ff)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-ghost{border-color:transparent;color:var(--text3)}
+.btn-ghost:hover{color:var(--text2);background:var(--surface)}
+.btn-coral{border-color:rgba(255,107,107,0.4);color:var(--coral)}
+.btn-coral:hover{background:rgba(255,107,107,0.1)}
+.btn-mint{border-color:rgba(67,217,162,0.4);color:var(--mint)}
+.btn-mint:hover{background:rgba(67,217,162,0.1)}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem 1.25rem}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 9px;border-radius:99px;font-weight:500}
+.badge-school{background:rgba(124,106,247,0.2);color:var(--accent3);border:1px solid rgba(124,106,247,0.3)}
+.badge-extra{background:rgba(67,217,162,0.15);color:var(--mint2);border:1px solid rgba(67,217,162,0.25)}
+.badge-personal{background:rgba(255,209,102,0.15);color:var(--amber2);border:1px solid rgba(255,209,102,0.25)}
+.badge-high{background:rgba(255,107,107,0.2);color:var(--coral2);border:1px solid rgba(255,107,107,0.3)}
+.badge-med{background:rgba(255,209,102,0.15);color:var(--amber2);border:1px solid rgba(255,209,102,0.25)}
+.badge-low{background:rgba(67,217,162,0.15);color:var(--mint2);border:1px solid rgba(67,217,162,0.25)}
+.nav{position:sticky;top:0;z-index:100;background:rgba(15,14,23,0.88);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 1rem;display:flex;align-items:center;height:56px;gap:4px}
+.nav-tab{padding:6px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;border:none;background:transparent;color:var(--text3);cursor:pointer;transition:all .18s;white-space:nowrap}
+.nav-tab.active{background:var(--surface);color:var(--accent2);box-shadow:inset 0 0 0 1px var(--border2)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:200;padding:1rem}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:18px;padding:1.5rem;width:100%;max-width:500px;max-height:90dvh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,0.6),var(--glow)}
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+@media(min-width:480px){.stat-grid{grid-template-columns:repeat(4,1fr)}}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.stat-val{font-family:var(--font-head);font-size:28px;font-weight:800;margin-top:4px}
+.task-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:8px;transition:border-color .18s,box-shadow .18s}
+.task-card:hover{border-color:var(--border2);box-shadow:var(--glow)}
+.task-card.done{opacity:0.5}
+.pattern-card{border-radius:var(--radius);padding:14px 16px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start}
+.pattern-high{background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3)}
+.pattern-med{background:rgba(255,209,102,0.08);border:1px solid rgba(255,209,102,0.25)}
+.pattern-low{background:rgba(67,217,162,0.08);border:1px solid rgba(67,217,162,0.25)}
+.brain-box{background:rgba(124,106,247,0.08);border:1px solid rgba(124,106,247,0.25);border-radius:var(--radius-sm);padding:10px 14px;margin-top:8px;font-size:12px;line-height:1.7;color:var(--accent3)}
+.brain-box strong{font-weight:600;color:var(--accent2)}
+.ai-panel{background:linear-gradient(135deg,rgba(124,106,247,0.1),rgba(67,217,162,0.06));border:1px solid rgba(124,106,247,0.3);border-radius:var(--radius);padding:1.1rem 1.25rem;margin-bottom:16px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-day-name{text-align:center;font-size:11px;font-weight:600;color:var(--text3);padding:6px 0;letter-spacing:0.5px}
+.cal-cell{min-height:56px;padding:5px;border-radius:8px;background:var(--bg2);border:1px solid var(--border)}
+.cal-cell.today{border-color:var(--accent);background:rgba(124,106,247,0.1)}
+.cal-cell.empty{background:transparent;border-color:transparent}
+.cal-num{font-size:11px;color:var(--text3);font-weight:500;margin-bottom:3px}
+.cal-cell.today .cal-num{color:var(--accent2);font-weight:700}
+.cal-dot{font-size:9px;padding:1px 5px;border-radius:4px;margin-bottom:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.sched-day{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:8px}
+.sched-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border)}
+.pulse-dot{width:8px;height:8px;border-radius:50%;background:var(--mint);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
+.prog-bar{height:4px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-top:6px}
+.prog-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--mint))}
+.divider{height:1px;background:var(--border);margin:16px 0}
+.tag-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.tag-row::-webkit-scrollbar{display:none}
+.main{max-width:720px;margin:0 auto;padding:1.25rem 1rem 5rem}
+@media(max-width:400px){.main{padding:.75rem .75rem 5rem}}
+.shimmer{background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.gcal-btn{display:flex;align-items:center;gap:6px;border-color:rgba(67,217,162,0.35);color:var(--mint2);font-size:12px;padding:6px 11px}
+.gcal-btn:hover{background:rgba(67,217,162,0.1)}
+.gcal-btn.connected{border-color:rgba(67,217,162,0.5);color:var(--mint)}
+.gcal-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;background:rgba(67,217,162,0.12);color:var(--mint2);border:1px solid rgba(67,217,162,0.25);padding:2px 7px;border-radius:99px}
+.import-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.import-row:last-child{border-bottom:none}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div id="modal-layer"></div>
+<!-- Google Identity Services -->
+<script src="https://accounts.google.com/gsi/client" async></script>
+<script>
+/* ── Utilities ─────────────────────────────────────────────────────── */
+function genId(){return Math.random().toString(36).slice(2,9)}
+function todayStr(){return new Date().toISOString().split('T')[0]}
+function daysLeft(d){return Math.ceil((new Date(d)-new Date())/86400000)}
+function priorityScore(t){
+  const dl=Math.max(0,daysLeft(t.dueDate));
+  const u=dl===0?10:dl<=1?8:dl<=3?6:dl<=7?4:2;
+  return u*0.5+(t.importance||3)*0.35+(6-(t.estimatedHours||1))*0.15;
+}
+function getWeekStart(){
+  const n=new Date(),day=n.getDay(),d=new Date(n);
+  d.setDate(n.getDate()+(day===0?-6:1-day));d.setHours(0,0,0,0);return d;
+}
+function fmt(str){if(!str)return'';return new Date(str+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+function toMins(t){if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m}
+function toTime(m){return String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
+function blockHours(blocks){return(blocks||[]).reduce((s,b)=>{const d=(toMins(b.end)-toMins(b.start))/60;return s+(d>0?d:0)},0)}
+
+/* ── Storage ───────────────────────────────────────────────────────── */
+function ld(k,d){try{const v=localStorage.getItem('fl_'+k);return v?JSON.parse(v):d}catch{return d}}
+function sv(k,v){try{localStorage.setItem('fl_'+k,JSON.stringify(v))}catch{}}
+
+/* ── Brain science ─────────────────────────────────────────────────── */
+const BRAIN={
+  effort_avoidance:{title:'Effort avoidance',icon:'🧠',desc:'Your brain keeps pushing back the big tasks.',
+    brain:'<strong>Why your brain does this:</strong> Your limbic system generates a threat response when facing high-effort tasks — predicting discomfort before you even start. This is called <strong>effort discounting</strong>.',
+    fix:'Try the 2-minute rule: just open the document. Starting triggers dopamine which overrides the threat signal.'},
+  easy_first:{title:'Easy-first bias',icon:'⚖️',desc:'You complete easy tasks while avoiding the important ones.',
+    brain:'<strong>Why your brain does this:</strong> Easy tasks release <strong>dopamine</strong>, giving a false sense of productivity. Your brain learns "easy = reward" — called <strong>cognitive ease bias</strong>.',
+    fix:'Schedule your hardest task first each morning before anything else. This is called "eating the frog."'},
+  repeat_delay:{title:'Repeat delays',icon:'🔁',desc:'The same task keeps getting pushed back.',
+    brain:'<strong>Why your brain does this:</strong> Each delay reinforces avoidance. The longer a task sits, the more psychological weight it accumulates — called the <strong>Zeigarnik load</strong>.',
+    fix:'Break the task into a step so small it feels silly — like "open the doc and write one sentence."'},
+  overdue_pile:{title:'Overdue pile-up',icon:'⏰',desc:'Multiple tasks have passed their due date.',
+    brain:'<strong>Why your brain does this:</strong> Too many urgent items causes <strong>decision paralysis</strong>. Stress hormones (cortisol) impair the prefrontal cortex — the region needed to plan.',
+    fix:'Pick ONE task — the smallest overdue item — and do just that. Clearing one lowers cortisol and restores planning.'}
+};
+
+/* ── Default week slots ────────────────────────────────────────────── */
+function defaultSlots(){
+  const ws=getWeekStart();
+  return['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((day,i)=>{
+    const date=new Date(ws.getTime()+i*86400000).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const blocks=i<5?[{id:genId(),start:'15:00',end:'17:00'},{id:genId(),start:'19:00',end:'21:00'}]:[{id:genId(),start:'10:00',end:'12:00'}];
+    return{day,date,blocks};
+  });
+}
+
+/* ── App state ─────────────────────────────────────────────────────── */
+const S={
+  tasks:ld('tasks',[
+    {id:'t1',title:'History essay',dueDate:new Date(Date.now()+2*864e5).toISOString().split('T')[0],estimatedHours:3,importance:4,category:'school',notes:'3000 words on WWII',subtasks:[{id:'s1',title:'Create outline',done:false},{id:'s2',title:'Draft intro',done:false}],done:false,createdAt:Date.now()},
+    {id:'t2',title:'Math problem set',dueDate:new Date(Date.now()+1*864e5).toISOString().split('T')[0],estimatedHours:1.5,importance:5,category:'school',notes:'Ch 8–9',subtasks:[],done:false,createdAt:Date.now()},
+    {id:'t3',title:'Soccer practice plan',dueDate:new Date(Date.now()+4*864e5).toISOString().split('T')[0],estimatedHours:0.5,importance:2,category:'extracurricular',notes:'',subtasks:[],done:false,createdAt:Date.now()},
+    {id:'t4',title:'Clean room',dueDate:new Date(Date.now()-864e5).toISOString().split('T')[0],estimatedHours:0.5,importance:1,category:'personal',notes:'',subtasks:[],done:true,createdAt:Date.now()},
+  ]),
+  delays:ld('delays',{t2:2,t1:1}),
+  weekSlots:ld('weekSlots',null),
+  tab:'tasks',filter:'all',
+  aiNudge:'',aiNudgeLoading:false,
+  aiInsight:'',aiInsightLoading:false,
+  calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),
+};
+
+function update(partial){
+  Object.assign(S,partial);
+  if(partial.tasks!==undefined)sv('tasks',S.tasks);
+  if(partial.delays!==undefined)sv('delays',S.delays);
+  if(partial.weekSlots!==undefined)sv('weekSlots',S.weekSlots);
+  render();
+}
+window.update=update;
+
+/* ── Pattern analysis ──────────────────────────────────────────────── */
+function patterns(){
+  const{tasks,delays}=S,res=[],pending=tasks.filter(t=>!t.done);
+  const he=pending.filter(t=>(t.estimatedHours||1)>=2);
+  if(he.length>0&&he.filter(t=>(delays[t.id]||0)>0).length/he.length>=0.5)
+    res.push({...BRAIN.effort_avoidance,severity:'high'});
+  const done=tasks.filter(t=>t.done);
+  if(done.length>=2){
+    const da=done.reduce((s,t)=>s+(t.importance||3),0)/done.length;
+    const pa=pending.length?pending.reduce((s,t)=>s+(t.importance||3),0)/pending.length:0;
+    if(da<pa-0.7)res.push({...BRAIN.easy_first,severity:'med'});
+  }
+  const rd=pending.filter(t=>(delays[t.id]||0)>=2);
+  if(rd.length>0){
+    const w=rd.sort((a,b)=>(delays[b.id]||0)-(delays[a.id]||0))[0];
+    res.push({...BRAIN.repeat_delay,severity:'high',taskName:w.title,delayCount:delays[w.id]||0});
+  }
+  if(pending.filter(t=>daysLeft(t.dueDate)<0).length>=2)
+    res.push({...BRAIN.overdue_pile,severity:'high'});
+  if(res.length===0)res.push({icon:'✓',title:'No patterns detected',desc:'Great job — your task habits look healthy.',brain:null,severity:'low'});
+  return res;
+}
+
+/* ── AI ────────────────────────────────────────────────────────────── */
+async function nudge(){
+  if(S.aiNudgeLoading)return;
+  update({aiNudgeLoading:true,aiNudge:''});
+  const sorted=[...S.tasks].filter(t=>!t.done).sort((a,b)=>priorityScore(b)-priorityScore(a));
+  const tl=sorted.slice(0,8).map(t=>`"${t.title}" due ${t.dueDate}, imp ${t.importance}/5, ${t.estimatedHours}h`).join('\n');
+  const ft=S.weekSlots?S.weekSlots.map(s=>`${s.day}: ${blockHours(s.blocks).toFixed(1)}h`).join(', '):'not set';
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:350,
+        system:'You are FlowAI, a warm direct productivity coach for teens. Plain text only, no markdown. Give exactly 2 short actionable nudges — one sentence each. Reference specific task names. Encouraging, not preachy.',
+        messages:[{role:'user',content:`Tasks:\n${tl}\nFree time: ${ft}\nGive 2 nudges.`}]})});
+    const d=await r.json();update({aiNudge:d.content?.[0]?.text||'Could not reach AI.',aiNudgeLoading:false});
+  }catch{update({aiNudge:'Could not connect.',aiNudgeLoading:false});}
+}
+async function insight(){
+  if(S.aiInsightLoading)return;
+  update({aiInsightLoading:true,aiInsight:''});
+  const sm=S.tasks.slice(0,12).map(t=>`"${t.title}": imp=${t.importance}/5, effort=${t.estimatedHours}h, delayed=${S.delays[t.id]||0}x, done=${t.done}`).join('\n');
+  const pt=patterns().map(p=>p.title).join(', ');
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,
+        system:'You are FlowAI brain science coach for teens. Warm, insightful, real. Plain text no markdown. 2 short paragraphs: explain patterns, then 2 science-backed strategies. Reference specific task names.',
+        messages:[{role:'user',content:`Tasks:\n${sm}\nPatterns: ${pt}\nAnalyze and give strategies.`}]})});
+    const d=await r.json();update({aiInsight:d.content?.[0]?.text||'Could not get insight.',aiInsightLoading:false});
+  }catch{update({aiInsight:'Could not connect.',aiInsightLoading:false});}
+}
+window.nudge=nudge;window.insight=insight;
+
+/* ════════════════════════════════════════════════════════════════════
+   WEEKLY SETUP — separate DOM node, NO full re-renders while editing
+   ════════════════════════════════════════════════════════════════════ */
+let _sd=null; // setup draft
+
+function openSetup(){
+  _sd=S.weekSlots?JSON.parse(JSON.stringify(S.weekSlots)):defaultSlots();
+  const ml=document.getElementById('modal-layer');
+  ml.innerHTML=buildSetupHTML();
+}
+window.openSetup=openSetup;
+
+function buildSetupHTML(){
+  return`<div class="modal-overlay" id="sov" onclick="if(event.target.id==='sov'&&${!!S.weekSlots})closeSetup()">
+    <div class="modal" style="max-width:540px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <span style="font-size:22px">📅</span>
+        <h2 style="font-size:19px">Weekly free time</h2>
+      </div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.6">Add the time blocks when you're free to work each day. FlowAI schedules your tasks only within these windows.</p>
+      <div id="sd-slots">${_sd.map((s,i)=>buildDayHTML(s,i)).join('')}</div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
+        ${S.weekSlots?`<button class="btn-ghost btn-sm" onclick="closeSetup()">Cancel</button>`:''}
+        <button class="btn-primary" onclick="saveSetup()">Save &amp; plan →</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function buildDayHTML(s,di){
+  const h=blockHours(s.blocks);
+  return`<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+    <div style="display:flex;align-items:center;margin-bottom:8px">
+      <span style="width:36px;font-family:var(--font-head);font-weight:700;font-size:13px;color:var(--text2)">${s.day}</span>
+      <span style="font-size:11px;color:var(--text3);width:56px">${s.date}</span>
+      <span id="sd-tot-${di}" style="font-size:12px;margin-left:auto;color:${h===0?'var(--text3)':h>=4?'var(--mint)':'var(--accent2)'}">
+        ${h>0?h.toFixed(1)+'h free':'No blocks'}
+      </span>
+    </div>
+    <div id="sd-blocks-${di}">${s.blocks.map((b,bi)=>buildBlockHTML(di,bi,b)).join('')}</div>
+    <button class="btn-sm btn-mint" style="font-size:11px;margin-top:4px" onclick="addBlock(${di})">+ Add time block</button>
+  </div>`;
+}
+
+function buildBlockHTML(di,bi,b){
+  const diff=(toMins(b.end)-toMins(b.start))/60;
+  const dur=diff>0?diff.toFixed(1)+'h':'—';
+  return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+    <input type="time" value="${b.start}" style="width:108px;flex-shrink:0" onchange="updBlock(${di},${bi},'start',this.value)"/>
+    <span style="color:var(--text3);font-size:12px;flex-shrink:0">to</span>
+    <input type="time" value="${b.end}" style="width:108px;flex-shrink:0" onchange="updBlock(${di},${bi},'end',this.value)"/>
+    <span id="bdur-${di}-${bi}" style="font-size:11px;color:var(--text3);min-width:32px">${dur}</span>
+    <button class="btn-sm btn-coral" style="padding:4px 8px;font-size:11px" onclick="rmBlock(${di},${bi})">✕</button>
+  </div>`;
+}
+
+function refreshDayTotal(di){
+  const h=blockHours(_sd[di].blocks);
+  const el=document.getElementById('sd-tot-'+di);
+  if(el){el.textContent=h>0?h.toFixed(1)+'h free':'No blocks';el.style.color=h===0?'var(--text3)':h>=4?'var(--mint)':'var(--accent2)';}
+}
+function refreshBlocks(di){
+  const el=document.getElementById('sd-blocks-'+di);
+  if(el)el.innerHTML=_sd[di].blocks.map((b,bi)=>buildBlockHTML(di,bi,b)).join('');
+}
+
+window.updBlock=function(di,bi,field,val){
+  _sd[di].blocks[bi][field]=val;
+  const b=_sd[di].blocks[bi];
+  const diff=(toMins(b.end)-toMins(b.start))/60;
+  const durEl=document.getElementById('bdur-'+di+'-'+bi);
+  if(durEl)durEl.textContent=diff>0?diff.toFixed(1)+'h':'—';
+  refreshDayTotal(di);
+};
+window.addBlock=function(di){
+  const blocks=_sd[di].blocks;
+  const lastEnd=blocks.length?blocks[blocks.length-1].end:'15:00';
+  const sm=toMins(lastEnd)+15;
+  _sd[di].blocks.push({id:genId(),start:toTime(sm),end:toTime(sm+90)});
+  refreshBlocks(di);refreshDayTotal(di);
+};
+window.rmBlock=function(di,bi){
+  _sd[di].blocks.splice(bi,1);
+  refreshBlocks(di);refreshDayTotal(di);
+};
+window.saveSetup=function(){
+  update({weekSlots:JSON.parse(JSON.stringify(_sd))});
+  closeSetup();
+};
+window.closeSetup=function(){
+  _sd=null;document.getElementById('modal-layer').innerHTML='';
+};
+
+/* ════════════════════════════════════════════════════════════════════
+   TASK MODAL — separate DOM, sliders update only their label
+   ════════════════════════════════════════════════════════════════════ */
+let _td=null; // task draft
+
+function openAdd(){
+  _td={id:null,title:'',dueDate:todayStr(),estimatedHours:1,importance:3,category:'school',notes:'',subtasks:[]};
+  document.getElementById('modal-layer').innerHTML=buildTaskHTML();
+}
+function openEdit(id){
+  _td=JSON.parse(JSON.stringify(S.tasks.find(t=>t.id===id)));
+  document.getElementById('modal-layer').innerHTML=buildTaskHTML();
+}
+window.openAdd=openAdd;window.openEdit=openEdit;
+
+function buildTaskHTML(){
+  const f=_td,isEdit=!!f.id;
+  return`<div class="modal-overlay" onclick="if(event.target===this)closeTM()">
+    <div class="modal">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+        <h2>${isEdit?'Edit task':'New task'}</h2>
+        <button class="btn-sm btn-ghost" onclick="closeTM()">✕</button>
+      </div>
+      <div style="display:grid;gap:12px">
+        <div>
+          <label>Task title</label>
+          <input id="f-title" value="${f.title}" placeholder="What do you need to do?" oninput="_td.title=this.value"/>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label>Due date</label>
+            <input type="date" id="f-due" value="${f.dueDate}" oninput="_td.dueDate=this.value"/>
+          </div>
+          <div>
+            <label>Est. hours</label>
+            <input type="number" min="0.25" max="20" step="0.25" value="${f.estimatedHours}" oninput="_td.estimatedHours=+this.value"/>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label>Importance: <span id="imp-val">${f.importance}</span>/5</label>
+            <input type="range" min="1" max="5" step="1" value="${f.importance}"
+              oninput="_td.importance=+this.value;document.getElementById('imp-val').textContent=this.value;document.getElementById('imp-stars').textContent='★'.repeat(+this.value)+'☆'.repeat(5-+this.value)"/>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:3px">
+              <span>Low</span>
+              <span id="imp-stars" style="color:var(--amber);letter-spacing:1px">${'★'.repeat(f.importance)+'☆'.repeat(5-f.importance)}</span>
+              <span>Critical</span>
+            </div>
+          </div>
+          <div>
+            <label>Category</label>
+            <select onchange="_td.category=this.value">
+              <option value="school" ${f.category==='school'?'selected':''}>School</option>
+              <option value="extracurricular" ${f.category==='extracurricular'?'selected':''}>Extracurricular</option>
+              <option value="personal" ${f.category==='personal'?'selected':''}>Personal</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label>Notes</label>
+          <textarea rows="2" style="resize:vertical" oninput="_td.notes=this.value">${f.notes}</textarea>
+        </div>
+        <div>
+          <label>Subtasks</label>
+          <div id="sub-list">${buildSubsHTML()}</div>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <input id="new-sub" placeholder="Add a subtask…" onkeydown="if(event.key==='Enter'){event.preventDefault();addSub()}"/>
+            <button class="btn-sm btn-mint" onclick="addSub()">Add</button>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:20px">
+        <button onclick="closeTM()">Cancel</button>
+        <button class="btn-primary" onclick="saveTask()">Save task</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function buildSubsHTML(){
+  return(_td.subtasks||[]).map((s,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <input type="checkbox" ${s.done?'checked':''} onchange="_td.subtasks[${i}].done=this.checked" style="flex-shrink:0"/>
+      <span style="flex:1;font-size:13px;${s.done?'text-decoration:line-through;color:var(--text3)':''}">${s.title}</span>
+      <button class="btn-sm btn-coral" onclick="rmSub('${s.id}')">✕</button>
+    </div>`).join('');
+}
+
+window.addSub=function(){
+  const el=document.getElementById('new-sub');
+  if(!el||!el.value.trim())return;
+  _td.subtasks.push({id:genId(),title:el.value.trim(),done:false});
+  el.value='';
+  const sl=document.getElementById('sub-list');
+  if(sl)sl.innerHTML=buildSubsHTML();
+};
+window.rmSub=function(id){
+  _td.subtasks=_td.subtasks.filter(s=>s.id!==id);
+  const sl=document.getElementById('sub-list');
+  if(sl)sl.innerHTML=buildSubsHTML();
+};
+window.closeTM=function(){_td=null;document.getElementById('modal-layer').innerHTML='';};
+window.saveTask=function(){
+  if(!_td.title.trim()){alert('Please add a title.');return;}
+  if(_td.id){
+    update({tasks:S.tasks.map(t=>t.id===_td.id?{...t,..._td}:t)});
+  }else{
+    update({tasks:[...S.tasks,{..._td,id:genId(),done:false,createdAt:Date.now()}]});
+  }
+  document.getElementById('modal-layer').innerHTML='';_td=null;
+};
+
+/* ── Break-down modal ──────────────────────────────────────────────── */
+let _bd=null;
+window.openBreak=function(id){
+  const t=S.tasks.find(x=>x.id===id);
+  _bd={task:t,steps:[
+    {id:genId(),title:`Open "${t.title}" and read the requirements (15 min)`},
+    {id:genId(),title:'Complete the first main section'},
+    {id:genId(),title:'Review and wrap up'},
+  ]};
+  document.getElementById('modal-layer').innerHTML=buildBreakHTML();
+};
+function buildBreakHTML(){
+  const{task,steps}=_bd;
+  return`<div class="modal-overlay" onclick="if(event.target===this)closeBM()">
+    <div class="modal">
+      <h2 style="margin-bottom:4px">Break it down</h2>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:8px">${task.title}</p>
+      <div class="brain-box" style="margin-bottom:14px"><strong>Brain tip:</strong> Making the first step tiny tricks the limbic system. Once you start, dopamine kicks in and momentum builds.</div>
+      <div id="bk-steps">${steps.map((s,i)=>`
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="font-size:12px;color:var(--text3);width:18px;font-family:var(--font-head);font-weight:700;text-align:center">${i+1}</span>
+          <input value="${s.title}" style="flex:1" oninput="_bd.steps[${i}].title=this.value"/>
+          <button class="btn-sm btn-coral" onclick="rmBStep('${s.id}')">✕</button>
+        </div>`).join('')}</div>
+      <div style="display:flex;gap:8px;margin:6px 0 16px">
+        <input id="new-bk" placeholder="Add a step…" onkeydown="if(event.key==='Enter'){event.preventDefault();addBStep()}"/>
+        <button class="btn-sm btn-mint" onclick="addBStep()">Add</button>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px">
+        <button onclick="closeBM()">Cancel</button>
+        <button class="btn-primary" onclick="saveBrk()">Save steps</button>
+      </div>
+    </div>
+  </div>`;
+}
+function refreshBSteps(){
+  const el=document.getElementById('bk-steps');
+  if(el)el.innerHTML=_bd.steps.map((s,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <span style="font-size:12px;color:var(--text3);width:18px;font-family:var(--font-head);font-weight:700;text-align:center">${i+1}</span>
+      <input value="${s.title}" style="flex:1" oninput="_bd.steps[${i}].title=this.value"/>
+      <button class="btn-sm btn-coral" onclick="rmBStep('${s.id}')">✕</button>
+    </div>`).join('');
+}
+window.rmBStep=id=>{_bd.steps=_bd.steps.filter(s=>s.id!==id);refreshBSteps()};
+window.addBStep=function(){
+  const el=document.getElementById('new-bk');if(!el||!el.value.trim())return;
+  _bd.steps.push({id:genId(),title:el.value.trim()});el.value='';refreshBSteps();
+};
+window.saveBrk=function(){
+  const ns=_bd.steps.map(s=>({id:s.id,title:s.title,done:false}));
+  update({tasks:S.tasks.map(t=>t.id===_bd.task.id?{...t,subtasks:[...t.subtasks,...ns]}:t)});
+  document.getElementById('modal-layer').innerHTML='';_bd=null;
+};
+window.closeBM=function(){_bd=null;document.getElementById('modal-layer').innerHTML='';};
+
+/* ════════════════════════════════════════════════════════════════════
+   SMART SCHEDULE — fits tasks into actual time blocks by priority+due
+   ════════════════════════════════════════════════════════════════════ */
+function buildSchedule(){
+  if(!S.weekSlots)return null;
+  const ws=getWeekStart();
+  // Sort: most urgent first, then by priority score
+  const pending=[...S.tasks].filter(t=>!t.done).sort((a,b)=>{
+    const au=Math.max(0,daysLeft(a.dueDate)),bu=Math.max(0,daysLeft(b.dueDate));
+    if(au!==bu)return au-bu;
+    return priorityScore(b)-priorityScore(a);
+  });
+  const remaining={};
+  pending.forEach(t=>{remaining[t.id]=+(t.estimatedHours||1)});
+
+  return S.weekSlots.map((slot,i)=>{
+    const date=new Date(ws.getTime()+i*86400000);
+    const dateStr=date.toISOString().split('T')[0];
+    const totalFree=blockHours(slot.blocks);
+    if(totalFree===0)return{day:slot.day,date:dateStr,totalFree,blocks:slot.blocks,scheduled:[]};
+
+    // Only tasks that still have hours remaining
+    const eligible=pending.filter(t=>remaining[t.id]>0.01);
+    const assignments=[];
+    let minutesUsed=0;
+    const totalMins=totalFree*60;
+
+    for(const task of eligible){
+      if(minutesUsed>=totalMins-14)break;
+      const avail=(totalMins-minutesUsed)/60;
+      const chunk=Math.min(remaining[task.id],avail,2); // max 2h per task per day
+      if(chunk<0.25)continue;
+      const cr=Math.round(chunk*4)/4;
+      remaining[task.id]=Math.max(0,remaining[task.id]-cr);
+      minutesUsed+=cr*60;
+      assignments.push({...task,chunk:cr,remainingAfter:Math.max(0,remaining[task.id])});
+    }
+
+    // Map assignments into real time windows from the blocks
+    const scheduled=[];
+    let bIdx=0,bUsed=0;
+    for(const a of assignments){
+      let need=a.chunk*60;
+      while(need>0.5&&bIdx<slot.blocks.length){
+        const b=slot.blocks[bIdx];
+        const bStart=toMins(b.start),bEnd=toMins(b.end);
+        const bAvail=Math.max(0,bEnd-bStart-bUsed);
+        if(bAvail<1){bIdx++;bUsed=0;continue;}
+        const use=Math.min(need,bAvail);
+        const st=toTime(bStart+bUsed),en=toTime(bStart+bUsed+use);
+        scheduled.push({...a,startTime:st,endTime:en,chunkActual:Math.round(use/60*4)/4});
+        bUsed+=use;need-=use;
+        if(bUsed>=bEnd-bStart){bIdx++;bUsed=0;}
+      }
+    }
+    return{day:slot.day,date:dateStr,totalFree,blocks:slot.blocks,scheduled};
+  });
+}
+
+/* ── Tab renderers ─────────────────────────────────────────────────── */
+function renderTasks(){
+  const sorted=[...S.tasks].sort((a,b)=>priorityScore(b)-priorityScore(a));
+  const filtered=S.filter==='all'?sorted:S.filter==='done'?sorted.filter(t=>t.done):sorted.filter(t=>t.category===S.filter);
+  const rankMap={};sorted.filter(t=>!t.done).forEach((t,i)=>rankMap[t.id]=i+1);
+  return`<div class="tag-row" style="margin-bottom:14px">
+    ${[['all','All'],['school','School'],['extracurricular','Extra'],['personal','Personal'],['done','Done']].map(([v,l])=>`
+      <button class="btn-sm ${S.filter===v?'btn-primary':''}" style="${S.filter!==v?'border-color:var(--border2);color:var(--text3)':''}" onclick="update({filter:'${v}'})">
+        ${l}</button>`).join('')}
+  </div>
+  ${filtered.length===0
+    ?`<div style="text-align:center;padding:4rem 1rem;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">✓</div>No tasks here — add one above!</div>`
+    :filtered.map(t=>{
+      const dl=daysLeft(t.dueDate),ov=!t.done&&dl<0,sc=priorityScore(t);
+      const urg=sc>7?'high':sc>4?'med':'low';
+      const dc=S.delays[t.id]||0,sd=(t.subtasks||[]).filter(s=>s.done).length,st=(t.subtasks||[]).length;
+      return`<div class="task-card ${t.done?'done':''}">
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <input type="checkbox" ${t.done?'checked':''} style="margin-top:2px" onchange="toggle('${t.id}')"/>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+              ${rankMap[t.id]&&!t.done?`<span style="font-family:var(--font-head);font-size:11px;font-weight:700;color:var(--accent);background:rgba(124,106,247,0.15);padding:2px 7px;border-radius:99px">#${rankMap[t.id]}</span>`:''}
+              <span style="font-size:15px;font-weight:500;${t.done?'text-decoration:line-through;color:var(--text3)':''}">${t.title}</span>
+            </div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:${st>0?'8px':'0'}">
+              <span class="badge badge-${t.category==='extracurricular'?'extra':t.category}">${t.category==='extracurricular'?'Extra':t.category[0].toUpperCase()+t.category.slice(1)}</span>
+              ${!t.done?`<span class="badge badge-${urg}">${urg} priority</span>`:''}
+              ${ov?`<span class="badge badge-high">Overdue</span>`:''}
+              ${dc>0?`<span class="badge badge-med">Delayed ${dc}×</span>`:''}
+              ${t.gcalImported?`<span class="gcal-badge"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Google Cal</span>`:''}
+              <span style="font-size:12px;color:var(--text3)">Due ${fmt(t.dueDate)} · ${t.estimatedHours}h</span>
+            </div>
+            ${st>0?`<div style="margin-bottom:6px"><div style="font-size:11px;color:var(--text3);margin-bottom:3px">${sd}/${st} subtasks</div><div class="prog-bar"><div class="prog-fill" style="width:${Math.round(sd/st*100)}%"></div></div></div>
+            ${(t.subtasks||[]).map(s=>`<div style="font-size:12px;color:${s.done?'var(--text3)':'var(--text2)'};text-decoration:${s.done?'line-through':'none'};margin-bottom:2px">· ${s.title}</div>`).join('')}`:''}
+            ${t.notes?`<div style="font-size:12px;color:var(--text3);margin-top:5px;font-style:italic">${t.notes}</div>`:''}
+          </div>
+          <div style="display:flex;gap:4px;flex-shrink:0">
+            <button class="btn-sm btn-ghost" onclick="openEdit('${t.id}')">Edit</button>
+            <button class="btn-sm btn-coral" onclick="del('${t.id}')">✕</button>
+          </div>
+        </div>
+      </div>`;}).join('')}`;
+}
+window.toggle=id=>update({tasks:S.tasks.map(t=>t.id===id?{...t,done:!t.done}:t)});
+window.del=id=>{if(confirm('Delete this task?'))update({tasks:S.tasks.filter(t=>t.id!==id)})};
+
+function renderPatterns(){
+  const pt=patterns(),sc={high:'var(--coral)',med:'var(--amber)',low:'var(--mint)'};
+  const pending=S.tasks.filter(t=>!t.done);
+  return`<h2 style="font-size:17px;margin-bottom:4px">Procrastination patterns</h2>
+  <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">FlowAI watches how you interact with tasks and detects emotional bias — backed by neuroscience.</p>
+  ${pt.map(p=>`<div class="pattern-card pattern-${p.severity}">
+    <span style="font-size:22px;margin-top:1px">${p.icon}</span>
+    <div style="flex:1">
+      <div style="font-weight:600;font-size:14px;color:${sc[p.severity]};margin-bottom:3px">${p.title}</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.5">${p.desc}${p.taskName?` "<em>${p.taskName}</em>" delayed ${p.delayCount}×.`:''}</div>
+      ${p.brain?`<div class="brain-box">${p.brain}<div style="margin-top:6px;color:var(--mint2)"><strong>Try this:</strong> ${p.fix}</div></div>`:''}
+    </div></div>`).join('')}
+  <div class="divider"></div>
+  <h2 style="font-size:16px;margin-bottom:4px">Task delay log</h2>
+  <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Tap "+ Delay" whenever you push a task back. FlowAI learns your patterns over time.</p>
+  ${pending.map(t=>{const d=S.delays[t.id]||0;return`
+    <div class="task-card">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:500;margin-bottom:5px">${t.title}</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap">
+            <span class="badge badge-${t.category==='extracurricular'?'extra':t.category}">${t.category==='extracurricular'?'Extra':t.category[0].toUpperCase()+t.category.slice(1)}</span>
+            <span style="font-size:12px;color:var(--text3)">${t.estimatedHours}h · imp ${t.importance}/5</span>
+            ${d>0?`<span class="badge badge-high">Delayed ${d}×</span>`:''}
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn-sm btn-coral" onclick="delayt('${t.id}')">+ Delay</button>
+          ${t.estimatedHours>=1?`<button class="btn-sm btn-mint" onclick="openBreak('${t.id}')">Break down</button>`:''}
+        </div>
+      </div>
+    </div>`}).join('')}
+  <div class="divider"></div>
+  <div style="background:linear-gradient(135deg,rgba(124,106,247,0.1),rgba(67,217,162,0.06));border:1px solid rgba(124,106,247,0.3);border-radius:var(--radius);padding:1.1rem 1.25rem">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:${S.aiInsight?'12px':'0'}">
+      <div>
+        <div style="font-size:15px;font-weight:600;color:var(--accent2)">✦ Deep brain analysis</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px">AI explains the neuroscience behind your specific patterns</div>
+      </div>
+      <button class="btn-sm" style="border-color:rgba(124,106,247,0.4);color:var(--accent2);flex-shrink:0;margin-left:12px" onclick="insight()" ${S.aiInsightLoading?'disabled':''}>
+        ${S.aiInsightLoading?'Analyzing...':'Analyze me ↗'}
+      </button>
+    </div>
+    ${S.aiInsightLoading?`<div class="shimmer" style="height:60px;margin-top:12px"></div>`:''}
+    ${S.aiInsight?`<div style="font-size:13px;line-height:1.8;color:var(--text);white-space:pre-wrap;margin-top:8px">${S.aiInsight}</div>`:''}
+  </div>`;
+}
+window.delayt=id=>update({delays:{...S.delays,[id]:(S.delays[id]||0)+1}});
+
+function renderSchedule(){
+  if(!S.weekSlots)return`<div style="text-align:center;padding:4rem 1rem">
+    <div style="font-size:40px;margin-bottom:12px">📅</div>
+    <div style="font-size:15px;color:var(--text2);margin-bottom:16px">Set your weekly free time to see your schedule.</div>
+    <button class="btn-primary" onclick="openSetup()">Set up this week →</button></div>`;
+  const plan=buildSchedule();if(!plan)return'';
+  return`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <h2 style="font-size:17px">This week's schedule</h2>
+    <button class="btn-sm" style="color:var(--accent2);border-color:rgba(124,106,247,0.3)" onclick="openSetup()">Edit hours</button>
+  </div>
+  ${plan.map(day=>`<div class="sched-day">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${day.scheduled.length?'8px':'0'}">
+      <div>
+        <span style="font-family:var(--font-head);font-weight:700;font-size:15px">${day.day}</span>
+        <span style="font-size:12px;color:var(--text3);margin-left:6px">${day.date}</span>
+      </div>
+      <span style="font-size:12px;color:${day.totalFree===0?'var(--text3)':day.totalFree>=4?'var(--mint)':'var(--accent2)'}">
+        ${day.totalFree>0?day.totalFree.toFixed(1)+'h free':'Rest day'}
+      </span>
+    </div>
+    ${day.totalFree===0?`<div style="font-size:12px;color:var(--text3)">Nothing scheduled</div>`
+      :day.scheduled.length===0?`<div style="font-size:12px;color:var(--text3)">No tasks left to schedule — enjoy!</div>`
+      :day.scheduled.map(a=>`<div class="sched-item">
+        <div style="width:3px;height:36px;border-radius:99px;flex-shrink:0;background:${a.category==='school'?'var(--accent)':a.category==='extracurricular'?'var(--mint)':'var(--amber)'}"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.title}</div>
+          <div style="font-size:11px;color:var(--text3)">${a.startTime} – ${a.endTime} · due ${fmt(a.dueDate)} · imp ${a.importance}/5</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:13px;color:var(--accent2);font-family:var(--font-head);font-weight:600">${a.chunkActual}h</div>
+          ${a.remainingAfter>0.01?`<div style="font-size:10px;color:var(--text3)">${a.remainingAfter.toFixed(1)}h left</div>`:`<div style="font-size:10px;color:var(--mint)">✓ complete</div>`}
+        </div>
+      </div>`).join('')}
+  </div>`).join('')}`;
+}
+
+function renderCalendar(){
+  const{calYear:y,calMonth:m}=S;
+  const dim=new Date(y,m+1,0).getDate();
+  let fd=new Date(y,m,1).getDay();fd=fd===0?6:fd-1;
+  const cells=[...Array(fd).fill(null),...Array.from({length:dim},(_,i)=>i+1)];
+  while(cells.length%7!==0)cells.push(null);
+  const tbd={};S.tasks.forEach(t=>{
+    const d=new Date(t.dueDate+'T12:00:00');
+    if(d.getFullYear()===y&&d.getMonth()===m){const k=d.getDate();if(!tbd[k])tbd[k]=[];tbd[k].push(t);}
+  });
+  const now=new Date();
+  const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return`<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+    <button class="btn-sm btn-ghost" onclick="update({calMonth:${m===0?11:m-1},calYear:${m===0?y-1:y}})">‹</button>
+    <h2 style="flex:1;text-align:center;font-size:17px">${MN[m]} ${y}</h2>
+    <button class="btn-sm btn-ghost" onclick="update({calMonth:${m===11?0:m+1},calYear:${m===11?y+1:y}})">›</button>
+  </div>
+  <div class="cal-grid" style="margin-bottom:8px">
+    ${['Mo','Tu','We','Th','Fr','Sa','Su'].map(d=>`<div class="cal-day-name">${d}</div>`).join('')}
+  </div>
+  <div class="cal-grid">
+    ${cells.map(day=>{
+      if(!day)return`<div class="cal-cell empty"></div>`;
+      const it=now.getDate()===day&&now.getMonth()===m&&now.getFullYear()===y;
+      const dt=tbd[day]||[];
+      return`<div class="cal-cell ${it?'today':''}">
+        <div class="cal-num">${day}</div>
+        ${dt.slice(0,2).map(t=>`<div class="cal-dot" style="background:${t.category==='school'?'rgba(124,106,247,0.25)':t.category==='extracurricular'?'rgba(67,217,162,0.2)':'rgba(255,209,102,0.2)'};color:${t.category==='school'?'var(--accent3)':t.category==='extracurricular'?'var(--mint2)':'var(--amber2)'}">${t.title}</div>`).join('')}
+        ${dt.length>2?`<div style="font-size:9px;color:var(--text3)">+${dt.length-2}</div>`:''}
+      </div>`;}).join('')}
+  </div>
+  <div style="display:flex;gap:14px;margin-top:14px;flex-wrap:wrap">
+    ${[['var(--accent3)','rgba(124,106,247,0.25)','School'],['var(--mint2)','rgba(67,217,162,0.2)','Extracurricular'],['var(--amber2)','rgba(255,209,102,0.2)','Personal']].map(([c,bg,l])=>`
+      <div style="display:flex;align-items:center;gap:5px">
+        <div style="width:8px;height:8px;border-radius:2px;background:${bg};border:1px solid ${c}"></div>
+        <span style="font-size:11px;color:var(--text3)">${l}</span>
+      </div>`).join('')}
+  </div>`;
+}
+
+/* ── Main render ───────────────────────────────────────────────────── */
+function render(){
+  const pend=S.tasks.filter(t=>!t.done);
+  const ov=S.tasks.filter(t=>!t.done&&daysLeft(t.dueDate)<0);
+  const td=Object.values(S.delays).reduce((s,v)=>s+v,0);
+  const tabs=[['tasks','Tasks'],['procrastination','🧠 Patterns'],['schedule','Schedule'],['calendar','Calendar']];
+
+  document.getElementById('root').innerHTML=`
+    <nav class="nav">
+      <span style="font-family:var(--font-head);font-weight:800;font-size:17px;color:var(--accent2);margin-right:8px;letter-spacing:-0.5px">FlowAI</span>
+      <div class="tag-row" style="flex:1;display:flex;gap:2px;overflow-x:auto">
+        ${tabs.map(([k,l])=>`<button class="nav-tab ${S.tab===k?'active':''}" onclick="update({tab:'${k}'})">${l}</button>`).join('')}
+      </div>
+      <div style="display:flex;gap:6px;margin-left:8px;flex-shrink:0">
+        <button class="btn-sm" style="border-color:var(--border2);color:var(--text3);padding:6px 10px" onclick="openSetup()" title="Weekly setup">⏱</button>
+        ${S.gcal.connected
+          ? `<button class="btn-sm gcal-btn connected" onclick="gcalSyncAgain()" title="Sync Google Calendar again">
+               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v5h-5"/></svg>
+               Sync
+             </button>`
+          : `<button class="btn-sm gcal-btn" onclick="gcalConnect()" title="Connect Google Calendar">
+               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+               Google Cal
+             </button>`
+        }
+        <button class="btn-sm btn-primary" onclick="openAdd()">+ Task</button>
+      </div>
+    </nav>
+    ${S.gcal.connected ? `
+    <div style="max-width:720px;margin:0 auto;padding:8px 1rem 0;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:12px;color:var(--mint2);display:flex;align-items:center;gap:5px">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+        Google Calendar connected · ${S.gcal.email} · last synced ${S.gcal.lastSync ? new Date(S.gcal.lastSync).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : 'never'}
+      </span>
+      <button class="btn-sm btn-ghost" style="font-size:11px;color:var(--text3)" onclick="gcalDisconnect()">Disconnect</button>
+    </div>` : ''}
+    <div class="main">
+      <div class="stat-grid">
+        <div class="stat-card"><div style="font-size:12px;color:var(--text3);letter-spacing:0.3px">PENDING</div><div class="stat-val" style="color:var(--accent2)">${pend.length}</div></div>
+        <div class="stat-card"><div style="font-size:12px;color:var(--text3);letter-spacing:0.3px">OVERDUE</div><div class="stat-val" style="color:${ov.length>0?'var(--coral)':'var(--text3)'}">${ov.length}</div></div>
+        <div class="stat-card"><div style="font-size:12px;color:var(--text3);letter-spacing:0.3px">DONE</div><div class="stat-val" style="color:var(--mint)">${S.tasks.filter(t=>t.done).length}</div></div>
+        <div class="stat-card"><div style="font-size:12px;color:var(--text3);letter-spacing:0.3px">DELAYS</div><div class="stat-val" style="color:${td>3?'var(--coral)':'var(--amber)'}">${td}</div></div>
+      </div>
+      <div class="ai-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${S.aiNudge?'10px':'0'}">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="pulse-dot"></div>
+            <span style="font-size:14px;font-weight:600;color:var(--accent2)">AI coach</span>
+          </div>
+          <button class="btn-sm" style="border-color:rgba(124,106,247,0.4);color:var(--accent2)" onclick="nudge()" ${S.aiNudgeLoading?'disabled':''}>
+            ${S.aiNudgeLoading?'Thinking...':'Get nudge ↗'}
+          </button>
+        </div>
+        ${S.aiNudgeLoading?`<div class="shimmer" style="height:40px;margin-top:10px"></div>`:''}
+        ${S.aiNudge?`<div style="font-size:13px;line-height:1.75;color:var(--text);white-space:pre-wrap">${S.aiNudge}</div>`:''}
+      </div>
+      <div>
+        ${S.tab==='tasks'?renderTasks():''}
+        ${S.tab==='procrastination'?renderPatterns():''}
+        ${S.tab==='schedule'?renderSchedule():''}
+        ${S.tab==='calendar'?renderCalendar():''}
+      </div>
+      <div style="height:env(safe-area-inset-bottom,0px)"></div>
+    </div>`;
+
+  // Show setup modal on first load
+  if(!S.weekSlots&&!_sd){
+    openSetup();
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   GOOGLE CALENDAR SYNC
+   Uses Google Identity Services (token model) + Calendar REST API.
+   No backend needed — pure client-side OAuth.
+
+   SETUP (takes ~10 min):
+   1. Go to https://console.cloud.google.com
+   2. Create a new project (e.g. "FlowAI")
+   3. Enable "Google Calendar API" under APIs & Services → Library
+   4. Go to APIs & Services → OAuth consent screen
+      - User type: External → Fill in app name "FlowAI", your email
+      - Add scope: .../auth/calendar.readonly
+      - Add yourself as a test user
+   5. Go to Credentials → Create Credentials → OAuth Client ID
+      - Application type: Web application
+      - Authorised JavaScript origins: add the URL you open the file from
+        (e.g. http://localhost or chrome-extension:// or file://)
+   6. Copy the Client ID and paste it below ↓
+   ════════════════════════════════════════════════════════════════════ */
+
+const GCAL_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID_HERE.apps.googleusercontent.com';
+const GCAL_SCOPE     = 'https://www.googleapis.com/auth/calendar.readonly';
+const GCAL_DAYS      = 30; // how far ahead to pull events
+
+// Persisted gcal state
+S.gcal = ld('gcal', { connected: false, email: '', lastSync: null });
+
+let _gcalToken = null; // in-memory only, never stored
+
+/* ── Token request via Google Identity Services ── */
+function gcalConnect() {
+  // Check localStorage for a previously saved Client ID first
+  const savedId = ld('gcalClientId', '');
+  const activeId = savedId || GCAL_CLIENT_ID;
+  if (!activeId || activeId.startsWith('YOUR_')) {
+    openGcalSetupGuide(); return;
+  }
+  if (!window.google?.accounts?.oauth2) {
+    showToast('Google sign-in library not loaded yet. Try again in a moment.'); return;
+  }
+  gcalConnectWithId(activeId);
+}
+window.gcalConnect = gcalConnect;
+
+function gcalDisconnect() {
+  _gcalToken = null;
+  sv('gcal', { connected: false, email: '', lastSync: null });
+  S.gcal = { connected: false, email: '', lastSync: null };
+  render();
+}
+window.gcalDisconnect = gcalDisconnect;
+
+/* ── Fetch events from Google Calendar API ── */
+async function gcalFetchAndImport() {
+  showToast('Fetching your Google Calendar events…');
+  const now    = new Date();
+  const future = new Date(now.getTime() + GCAL_DAYS * 86400000);
+  const tMin   = now.toISOString();
+  const tMax   = future.toISOString();
+
+  try {
+    // Get user info for display
+    const meRes  = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: 'Bearer ' + _gcalToken }
+    });
+    const me = await meRes.json();
+
+    // Get events from primary calendar
+    const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?`
+      + `timeMin=${encodeURIComponent(tMin)}&timeMax=${encodeURIComponent(tMax)}`
+      + `&singleEvents=true&orderBy=startTime&maxResults=100`;
+    const evRes  = await fetch(url, { headers: { Authorization: 'Bearer ' + _gcalToken } });
+    const evData = await evRes.json();
+
+    if (evData.error) {
+      showToast('Calendar error: ' + evData.error.message); return;
+    }
+
+    const events = (evData.items || []).filter(e => e.status !== 'cancelled');
+    if (events.length === 0) {
+      showToast('No upcoming events found in the next 30 days.');
+      sv('gcal', { connected: true, email: me.email, lastSync: new Date().toISOString() });
+      S.gcal = { connected: true, email: me.email, lastSync: new Date().toISOString() };
+      render(); return;
+    }
+
+    // Show import review modal
+    openImportModal(events, me.email);
+
+  } catch (err) {
+    showToast('Could not reach Google Calendar. Check your internet.');
+    console.error(err);
+  }
+}
+
+/* ── Convert a Google Calendar event → FlowAI task ── */
+function gcalEventToTask(ev) {
+  // Get date — handle all-day (date) vs timed (dateTime)
+  const start = ev.start?.dateTime || ev.start?.date || todayStr();
+  const dueDate = start.split('T')[0];
+
+  // Guess category from calendar event keywords
+  const title = (ev.summary || 'Untitled event').toLowerCase();
+  let category = 'personal';
+  if (/homework|essay|assignment|project|study|test|exam|quiz|due|submit|class|lecture|lab|report/.test(title))
+    category = 'school';
+  else if (/practice|rehearsal|club|team|game|match|training|sport|meet/.test(title))
+    category = 'extracurricular';
+
+  // Estimate duration from event length (if timed), else 1h default
+  let estimatedHours = 1;
+  if (ev.start?.dateTime && ev.end?.dateTime) {
+    const diff = (new Date(ev.end.dateTime) - new Date(ev.start.dateTime)) / 3600000;
+    estimatedHours = Math.max(0.25, Math.round(diff * 4) / 4);
+  }
+
+  return {
+    id: 'gcal_' + (ev.id || genId()),
+    title: ev.summary || 'Untitled event',
+    dueDate,
+    estimatedHours,
+    importance: 3,
+    category,
+    notes: ev.description ? ev.description.slice(0, 200) : '',
+    subtasks: [],
+    done: false,
+    createdAt: Date.now(),
+    gcalId: ev.id,         // store so we can detect duplicates
+    gcalImported: true,
+  };
+}
+
+/* ── Import review modal ── */
+let _importDraft = []; // array of {ev, task, selected, alreadyExists}
+
+function openImportModal(events, email) {
+  // Mark which ones are already imported
+  const existingGcalIds = new Set(S.tasks.filter(t => t.gcalId).map(t => t.gcalId));
+  _importDraft = events.map(ev => ({
+    ev,
+    task: gcalEventToTask(ev),
+    selected: !existingGcalIds.has(ev.id), // pre-select only new ones
+    alreadyExists: existingGcalIds.has(ev.id),
+  }));
+
+  const ml = document.getElementById('modal-layer');
+  ml.innerHTML = buildImportHTML(email);
+}
+
+function buildImportHTML(email) {
+  const newCount  = _importDraft.filter(r => !r.alreadyExists).length;
+  const skipCount = _importDraft.filter(r => r.alreadyExists).length;
+  return `<div class="modal-overlay" onclick="if(event.target===this)closeImport()">
+    <div class="modal" style="max-width:560px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+        <span style="font-size:22px">📆</span>
+        <h2 style="font-size:19px">Import from Google Calendar</h2>
+      </div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:4px">
+        Signed in as <strong style="color:var(--mint2)">${email}</strong> · Next ${GCAL_DAYS} days
+      </p>
+      <p style="font-size:12px;color:var(--text3);margin-bottom:16px">
+        ${newCount} new event${newCount!==1?'s':''} · ${skipCount} already imported (unchecked)
+      </p>
+
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button class="btn-sm" onclick="selectAllImport(true)">Select all</button>
+        <button class="btn-sm" onclick="selectAllImport(false)">Deselect all</button>
+      </div>
+
+      <div style="max-height:340px;overflow-y:auto;margin-bottom:16px">
+        ${_importDraft.map((r, i) => `
+          <div class="import-row" style="${r.alreadyExists?'opacity:0.5':''}">
+            <input type="checkbox" ${r.selected?'checked':''} style="flex-shrink:0"
+              onchange="_importDraft[${i}].selected=this.checked;refreshImportCount()"/>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                ${r.task.title}
+                ${r.alreadyExists?`<span style="font-size:10px;color:var(--mint2);margin-left:6px">already imported</span>`:''}
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;align-items:center">
+                <span class="badge badge-${r.task.category==='extracurricular'?'extra':r.task.category}" style="font-size:10px">${r.task.category==='extracurricular'?'Extra':r.task.category[0].toUpperCase()+r.task.category.slice(1)}</span>
+                <span style="font-size:11px;color:var(--text3)">Due ${fmt(r.task.dueDate)}</span>
+                <span style="font-size:11px;color:var(--text3)">${r.task.estimatedHours}h</span>
+              </div>
+              <div style="margin-top:4px">
+                <label style="font-size:11px;margin-bottom:2px">Importance</label>
+                <input type="range" min="1" max="5" step="1" value="${r.task.importance}"
+                  oninput="_importDraft[${i}].task.importance=+this.value"
+                  style="width:100%;max-width:160px"/>
+              </div>
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span id="import-count" style="font-size:13px;color:var(--text2)">
+          ${_importDraft.filter(r=>r.selected).length} selected
+        </span>
+        <div style="display:flex;gap:8px">
+          <button onclick="closeImport()">Cancel</button>
+          <button class="btn-primary" onclick="confirmImport('${email}')">
+            Import selected →
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+window.selectAllImport = function(val) {
+  _importDraft.forEach(r => { r.selected = val; });
+  // Refresh checkboxes
+  document.querySelectorAll('.import-row input[type=checkbox]')
+    .forEach((cb, i) => { cb.checked = _importDraft[i].selected; });
+  refreshImportCount();
+};
+window.refreshImportCount = function() {
+  const el = document.getElementById('import-count');
+  if (el) el.textContent = _importDraft.filter(r=>r.selected).length + ' selected';
+};
+
+window.confirmImport = function(email) {
+  const toAdd = _importDraft
+    .filter(r => r.selected && !r.alreadyExists)
+    .map(r => r.task);
+  const toUpdate = _importDraft
+    .filter(r => r.selected && r.alreadyExists)
+    .map(r => r.task);
+
+  let newTasks = [...S.tasks];
+  // Add new ones
+  newTasks = [...newTasks, ...toAdd];
+  // Update importance on existing ones (user may have adjusted)
+  newTasks = newTasks.map(t => {
+    const match = toUpdate.find(u => u.gcalId === t.gcalId);
+    return match ? { ...t, importance: match.importance } : t;
+  });
+
+  const gcalState = { connected: true, email, lastSync: new Date().toISOString() };
+  sv('gcal', gcalState);
+  S.gcal = gcalState;
+  update({ tasks: newTasks });
+
+  closeImport();
+  showToast(`✓ Imported ${toAdd.length} event${toAdd.length!==1?'s':''} as tasks`);
+};
+
+window.closeImport = function() {
+  _importDraft = [];
+  document.getElementById('modal-layer').innerHTML = '';
+};
+
+/* ── Setup guide modal (shown when Client ID not configured) ── */
+function openGcalSetupGuide() {
+  const savedId = ld('gcalClientId','');
+  document.getElementById('modal-layer').innerHTML = `
+  <div class="modal-overlay" onclick="if(event.target===this)closeImport()">
+    <div class="modal" style="max-width:520px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <span style="font-size:22px">🔧</span>
+        <h2>Set up Google Calendar sync</h2>
+      </div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.7">
+        Takes about 10 minutes and is completely free. You only do this once — after that, syncing is one click.
+      </p>
+      ${[
+        ['1','Go to Google Cloud Console','Go to <a href="https://console.cloud.google.com" target="_blank" style="color:var(--accent2)">console.cloud.google.com</a> and sign in with your Google account'],
+        ['2','Create a new project','Click the project dropdown at the top → "New Project" → name it "FlowAI" → Create'],
+        ['3','Enable Calendar API','APIs &amp; Services → Library → search "Google Calendar API" → click it → Enable'],
+        ['4','Configure OAuth consent screen','APIs &amp; Services → OAuth consent screen → External → fill in app name "FlowAI" and your email → Next → Add scope → search "calendar.readonly" → add it → Next → Add yourself as a test user → Save'],
+        ['5','Create credentials','Credentials → Create Credentials → OAuth Client ID → Application type: Web application → under Authorised JavaScript origins add <strong style="color:var(--accent3)">https://yourusername.github.io</strong> (replace with your actual GitHub Pages URL, or <strong style="color:var(--accent3)">http://localhost:8080</strong> if running locally) → Create'],
+        ['6','Copy your Client ID','A popup shows your Client ID — copy it (it ends in <em>.apps.googleusercontent.com</em>)'],
+      ].map(([n,title,desc]) => `
+        <div style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start">
+          <div style="width:24px;height:24px;border-radius:50%;background:rgba(124,106,247,0.2);color:var(--accent2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;font-family:var(--font-head);margin-top:1px">${n}</div>
+          <div>
+            <div style="font-size:13px;font-weight:500;margin-bottom:2px">${title}</div>
+            <div style="font-size:12px;color:var(--text3);line-height:1.6">${desc}</div>
+          </div>
+        </div>`).join('')}
+
+      <!-- Step 7: paste Client ID directly in the app — no code editing -->
+      <div style="display:flex;gap:12px;margin-bottom:4px;align-items:flex-start">
+        <div style="width:24px;height:24px;border-radius:50%;background:rgba(67,217,162,0.2);color:var(--mint2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;font-family:var(--font-head);margin-top:1px">7</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500;margin-bottom:6px">Paste your Client ID below and connect</div>
+          <div style="display:flex;gap:8px">
+            <input id="gcal-id-input" placeholder="xxxx.apps.googleusercontent.com"
+              value="${savedId}" style="flex:1;font-size:13px"
+              oninput="this.value=this.value.trim()"/>
+            <button class="btn-primary" style="flex-shrink:0;white-space:nowrap" onclick="saveClientIdAndConnect()">Connect →</button>
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:5px">Saved in your browser — no code editing needed.</div>
+        </div>
+      </div>
+
+      <div class="brain-box" style="margin-top:12px">
+        <strong>Privacy:</strong> Your calendar data goes directly from Google to your browser. FlowAI has no server — nothing is stored anywhere except your own device.
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:16px">
+        <button class="btn-ghost btn-sm" onclick="closeImport()">Close</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+window.saveClientIdAndConnect = function() {
+  const val = document.getElementById('gcal-id-input')?.value?.trim();
+  if (!val || !val.includes('.apps.googleusercontent.com')) {
+    showToast('Paste a valid Client ID — it should end in .apps.googleusercontent.com');
+    return;
+  }
+  sv('gcalClientId', val);
+  closeImport();
+  showToast('Client ID saved! Opening Google sign-in…');
+  setTimeout(() => gcalConnectWithId(val), 400);
+};
+
+function gcalConnectWithId(clientId) {
+  if (!window.google?.accounts?.oauth2) {
+    showToast('Google library not loaded yet — try again in a moment.'); return;
+  }
+  google.accounts.oauth2.initTokenClient({
+    client_id: clientId,
+    scope: GCAL_SCOPE,
+    callback: async (resp) => {
+      if (resp.error) { showToast('Sign-in failed: ' + resp.error); return; }
+      _gcalToken = resp.access_token;
+      await gcalFetchAndImport();
+    },
+  }).requestAccessToken();
+}
+
+/* ── Toast notification ── */
+function showToast(msg) {
+  let t = document.getElementById('flowai-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'flowai-toast';
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface2);color:var(--text);padding:10px 20px;border-radius:99px;font-size:13px;z-index:999;border:1px solid var(--border2);white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.4);transition:opacity .3s';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 3000);
+}
+
+/* ── Sync again button ── */
+window.gcalSyncAgain = function() {
+  if (!_gcalToken) { gcalConnect(); return; }
+  gcalFetchAndImport();
+};
+
+render();
+</script>
+</body>
+</html>
