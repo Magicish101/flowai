@@ -620,7 +620,33 @@ function renderTasks(){
       </div>`;}).join('')}`;
 }
 window.toggle=id=>update({tasks:S.tasks.map(t=>t.id===id?{...t,done:!t.done}:t)});
-window.del=id=>{if(confirm('Delete this task?'))update({tasks:S.tasks.filter(t=>t.id!==id)})};
+window.del=function(id){
+  const t=S.tasks.find(x=>x.id===id);
+  if(!t)return;
+  const ml=document.getElementById('modal-layer');
+  ml.innerHTML=`
+    <div class="modal-overlay" onclick="if(event.target===this)closeConfirm()">
+      <div class="modal" style="max-width:360px;text-align:center;padding:2rem 1.75rem">
+        <div style="font-size:36px;margin-bottom:12px">🗑️</div>
+        <h2 style="font-size:18px;margin-bottom:8px">Delete task?</h2>
+        <p style="font-size:14px;color:var(--text2);margin-bottom:24px;line-height:1.6">
+          "<strong style="color:var(--text)">${t.title}</strong>" will be permanently deleted.
+        </p>
+        <div style="display:flex;gap:10px;justify-content:center">
+          <button style="flex:1;max-width:140px" onclick="closeConfirm()">Cancel</button>
+          <button class="btn-coral" style="flex:1;max-width:140px;background:rgba(255,107,107,0.15)"
+            onclick="confirmDel('${id}')">Delete</button>
+        </div>
+      </div>
+    </div>`;
+};
+window.confirmDel=function(id){
+  update({tasks:S.tasks.filter(t=>t.id!==id)});
+  document.getElementById('modal-layer').innerHTML='';
+};
+window.closeConfirm=function(){
+  document.getElementById('modal-layer').innerHTML='';
+};
 
 function renderPatterns(){
   const pt=patterns(),sc={high:'var(--coral)',med:'var(--amber)',low:'var(--mint)'};
@@ -1350,11 +1376,25 @@ function enterApp() {
 }
 
 function forgotPin() {
-  if (confirm('This will delete your PIN and all your FlowAI data. Are you sure?')) {
-    localStorage.clear();
-    location.reload();
-  }
+  const ml=document.getElementById('modal-layer');
+  ml.innerHTML=`
+    <div class="modal-overlay" onclick="if(event.target===this)closeForgot()">
+      <div class="modal" style="max-width:360px;text-align:center;padding:2rem 1.75rem">
+        <div style="font-size:36px;margin-bottom:12px">⚠️</div>
+        <h2 style="font-size:18px;margin-bottom:8px">Reset FlowAI?</h2>
+        <p style="font-size:14px;color:var(--text2);margin-bottom:24px;line-height:1.6">
+          This will permanently delete your PIN, all tasks, and all data. This cannot be undone.
+        </p>
+        <div style="display:flex;gap:10px;justify-content:center">
+          <button style="flex:1;max-width:140px" onclick="closeForgot()">Cancel</button>
+          <button class="btn-coral" style="flex:1;max-width:140px;background:rgba(255,107,107,0.15)"
+            onclick="confirmReset()">Reset app</button>
+        </div>
+      </div>
+    </div>`;
 }
+window.confirmReset=function(){localStorage.clear();location.reload();};
+window.closeForgot=function(){document.getElementById('modal-layer').innerHTML='';};
 
 window.pinPress = pinPress;
 window.pinDel = pinDel;
