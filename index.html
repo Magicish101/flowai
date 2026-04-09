@@ -103,6 +103,25 @@ button:active{transform:scale(0.97)}
 .gcal-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;background:rgba(67,217,162,0.12);color:var(--mint2);border:1px solid rgba(67,217,162,0.25);padding:2px 7px;border-radius:99px}
 .import-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
 .import-row:last-child{border-bottom:none}
+/* ── Login screen ── */
+.login-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:500;padding:2rem;transition:opacity .4s}
+.login-screen::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(124,106,247,0.18) 0%,transparent 65%),radial-gradient(ellipse 40% 40% at 20% 80%,rgba(67,217,162,0.08) 0%,transparent 60%);pointer-events:none}
+.login-logo{font-family:var(--font-head);font-size:52px;font-weight:800;color:var(--accent2);letter-spacing:-2px;margin-bottom:6px;animation:fadeUp .5s ease both}
+.login-tagline{font-size:14px;color:var(--text3);margin-bottom:44px;text-align:center;animation:fadeUp .5s .1s ease both}
+.login-card{background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:1.75rem;width:100%;max-width:340px;box-shadow:0 24px 60px rgba(0,0,0,0.5),var(--glow);animation:fadeUp .5s .15s ease both;position:relative;z-index:1}
+.pin-dots{display:flex;justify-content:center;gap:14px;margin:18px 0 20px}
+.pin-dot{width:14px;height:14px;border-radius:50%;background:var(--surface2);border:2px solid var(--border2);transition:all .15s}
+.pin-dot.filled{background:var(--accent);border-color:var(--accent);box-shadow:0 0 10px rgba(124,106,247,0.7)}
+.pin-dot.error{background:var(--coral);border-color:var(--coral)}
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px}
+.numpad-btn{background:var(--bg3);border:1px solid var(--border);border-radius:12px;height:58px;font-size:22px;font-family:var(--font-head);font-weight:600;color:var(--text);cursor:pointer;transition:all .12s;display:flex;align-items:center;justify-content:center;width:100%}
+.numpad-btn:hover{background:var(--surface);border-color:var(--accent2);color:var(--accent2)}
+.numpad-btn:active{transform:scale(0.93)}
+.numpad-btn.del{font-size:16px;color:var(--text3)}
+.numpad-btn.del:hover{color:var(--coral);border-color:rgba(255,107,107,0.4)}
+.numpad-btn.empty{background:transparent;border-color:transparent;cursor:default;pointer-events:none}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
 </style>
 </head>
 <body>
@@ -743,6 +762,7 @@ function render(){
       </div>
       <div style="display:flex;gap:6px;margin-left:8px;flex-shrink:0">
         <button class="btn-sm" style="border-color:var(--border2);color:var(--text3);padding:6px 10px" onclick="openSetup()" title="Weekly setup">⏱</button>
+        <button class="btn-sm" style="border-color:var(--border2);color:var(--text3);padding:6px 10px" onclick="lockApp()" title="Lock app">🔒</button>
         ${S.gcal.connected
           ? `<button class="btn-sm gcal-btn connected" onclick="gcalSyncAgain()" title="Sync Google Calendar again">
                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v5h-5"/></svg>
@@ -1154,7 +1174,208 @@ window.gcalSyncAgain = function() {
   gcalFetchAndImport();
 };
 
-render();
+/* ════════════════════════════════════════════════════════════════════
+   LOGIN SYSTEM — PIN-based, stored as a hash in localStorage
+   First launch: user creates a 4-digit PIN + name
+   Subsequent launches: PIN entry screen
+   Session persists for 8 hours so they don't re-enter constantly
+   ════════════════════════════════════════════════════════════════════ */
+
+const AUTH = {
+  pin:     ld('pin', null),       // stored as simple hash
+  name:    ld('userName', ''),
+  session: ld('session', 0),      // timestamp of last login
+};
+const SESSION_HOURS = 8;
+
+function hashPin(pin) {
+  // Simple deterministic hash — good enough for a personal local app
+  let h = 0;
+  for (let i = 0; i < pin.length; i++) {
+    h = (Math.imul(31, h) + pin.charCodeAt(i)) | 0;
+  }
+  return h.toString(36);
+}
+
+function isSessionValid() {
+  if (!AUTH.pin) return false; // no pin set yet
+  const age = (Date.now() - AUTH.session) / 3600000;
+  return age < SESSION_HOURS;
+}
+
+function startSession() {
+  AUTH.session = Date.now();
+  sv('session', AUTH.session);
+}
+
+/* ── PIN entry state ── */
+let _pin = '';
+let _pinMode = AUTH.pin ? 'enter' : 'create'; // 'create' | 'confirm' | 'enter'
+let _pinConfirm = '';
+let _pinName = '';
+let _pinError = '';
+
+function renderLogin() {
+  const isCreate = _pinMode === 'create';
+  const isConfirm = _pinMode === 'confirm';
+  const isEnter = _pinMode === 'enter';
+
+  const title = isCreate ? 'Create your PIN'
+              : isConfirm ? 'Confirm your PIN'
+              : `Welcome back${AUTH.name ? ', ' + AUTH.name.split(' ')[0] : ''}`;
+
+  const subtitle = isCreate ? 'Choose a 4-digit PIN to secure your FlowAI'
+                 : isConfirm ? 'Enter your PIN again to confirm'
+                 : 'Enter your PIN to continue';
+
+  const filledCount = _pin.length;
+
+  document.getElementById('root').innerHTML = `
+    <div class="login-screen" id="login-screen">
+      <div class="login-logo" style="position:relative;z-index:1">FlowAI</div>
+      <div class="login-tagline" style="position:relative;z-index:1">Beat procrastination with AI</div>
+
+      <div class="login-card">
+        ${isCreate ? `
+          <div style="margin-bottom:16px">
+            <label>Your name</label>
+            <input id="login-name" placeholder="e.g. Ishaan" value="${_pinName}"
+              oninput="_pinName=this.value" style="font-size:15px"/>
+          </div>
+        ` : ''}
+
+        <div style="text-align:center">
+          <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px">${title}</div>
+          <div style="font-size:13px;color:var(--text3);margin-bottom:4px">${subtitle}</div>
+          ${_pinError ? `<div style="font-size:12px;color:var(--coral);margin-top:4px">${_pinError}</div>` : ''}
+        </div>
+
+        <div class="pin-dots" id="pin-dots">
+          ${[0,1,2,3].map(i => `
+            <div class="pin-dot ${i < filledCount ? 'filled' : ''} ${_pinError ? 'error' : ''}" id="dot-${i}"></div>
+          `).join('')}
+        </div>
+
+        <div class="numpad">
+          ${[1,2,3,4,5,6,7,8,9].map(n => `
+            <button class="numpad-btn" onclick="pinPress(${n})">${n}</button>
+          `).join('')}
+          <button class="numpad-btn empty"></button>
+          <button class="numpad-btn" onclick="pinPress(0)">0</button>
+          <button class="numpad-btn del" onclick="pinDel()">⌫</button>
+        </div>
+
+        ${isEnter ? `
+          <div style="text-align:center;margin-top:16px">
+            <button class="btn-ghost btn-sm" style="font-size:12px;color:var(--text3)" onclick="forgotPin()">Forgot PIN? Reset app</button>
+          </div>
+        ` : ''}
+      </div>
+    </div>`;
+}
+
+function pinPress(digit) {
+  if (_pin.length >= 4) return;
+  _pinError = '';
+  _pin += digit;
+  updatePinDots();
+  if (_pin.length === 4) {
+    setTimeout(() => handlePinComplete(), 120);
+  }
+}
+
+function updatePinDots() {
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById('dot-' + i);
+    if (!dot) return;
+    dot.className = 'pin-dot' + (i < _pin.length ? ' filled' : '') + (_pinError ? ' error' : '');
+  }
+}
+
+function pinDel() {
+  if (_pin.length > 0) {
+    _pin = _pin.slice(0, -1);
+    _pinError = '';
+    updatePinDots();
+  }
+}
+
+function handlePinComplete() {
+  if (_pinMode === 'create') {
+    if (_pin.length < 4) return;
+    _pinConfirm = _pin;
+    _pin = '';
+    _pinMode = 'confirm';
+    renderLogin();
+
+  } else if (_pinMode === 'confirm') {
+    if (_pin === _pinConfirm) {
+      // Save PIN and name
+      const name = (document.getElementById('login-name')?.value || _pinName).trim();
+      AUTH.pin = hashPin(_pin);
+      AUTH.name = name;
+      sv('pin', AUTH.pin);
+      sv('userName', name);
+      startSession();
+      enterApp();
+    } else {
+      _pinError = 'PINs don\'t match — try again';
+      _pin = '';
+      _pinMode = 'create';
+      _pinConfirm = '';
+      renderLogin();
+      // Shake dots
+      setTimeout(() => { _pinError = ''; renderLogin(); }, 1500);
+    }
+
+  } else if (_pinMode === 'enter') {
+    if (hashPin(_pin) === AUTH.pin) {
+      startSession();
+      enterApp();
+    } else {
+      _pinError = 'Wrong PIN — try again';
+      _pin = '';
+      // Shake animation via re-render
+      renderLogin();
+      setTimeout(() => { _pinError = ''; renderLogin(); }, 1500);
+    }
+  }
+}
+
+function enterApp() {
+  // Fade out login screen
+  const ls = document.getElementById('login-screen');
+  if (ls) { ls.style.opacity = '0'; setTimeout(() => render(), 400); }
+  else render();
+}
+
+function forgotPin() {
+  if (confirm('This will delete your PIN and all your FlowAI data. Are you sure?')) {
+    localStorage.clear();
+    location.reload();
+  }
+}
+
+window.pinPress = pinPress;
+window.pinDel = pinDel;
+window.forgotPin = forgotPin;
+
+function lockApp() {
+  AUTH.session = 0;
+  sv('session', 0);
+  _pin = '';
+  _pinMode = 'enter';
+  _pinError = '';
+  renderLogin();
+}
+window.lockApp = lockApp;
+
+/* ── Boot: show login or app ── */
+if (isSessionValid()) {
+  render(); // session still active — go straight to app
+} else {
+  renderLogin(); // show login screen
+}
 </script>
 </body>
 </html>
