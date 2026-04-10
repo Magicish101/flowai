@@ -226,34 +226,145 @@ function patterns(){
   return res;
 }
 
-/* ── AI ────────────────────────────────────────────────────────────── */
-async function nudge(){
+/* ════════════════════════════════════════════════════════════════════
+   SMART COACH — template-based, uses real task data, works everywhere
+   No API key or internet connection needed for these features
+   ════════════════════════════════════════════════════════════════════ */
+
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function nudge(){
   if(S.aiNudgeLoading)return;
   update({aiNudgeLoading:true,aiNudge:''});
+
   const sorted=[...S.tasks].filter(t=>!t.done).sort((a,b)=>priorityScore(b)-priorityScore(a));
-  const tl=sorted.slice(0,8).map(t=>`"${t.title}" due ${t.dueDate}, imp ${t.importance}/5, ${t.estimatedHours}h`).join('\n');
-  const ft=S.weekSlots?S.weekSlots.map(s=>`${s.day}: ${blockHours(s.blocks).toFixed(1)}h`).join(', '):'not set';
-  try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:350,
-        system:'You are FlowAI, a warm direct productivity coach for teens. Plain text only, no markdown. Give exactly 2 short actionable nudges — one sentence each. Reference specific task names. Encouraging, not preachy.',
-        messages:[{role:'user',content:`Tasks:\n${tl}\nFree time: ${ft}\nGive 2 nudges.`}]})});
-    const d=await r.json();update({aiNudge:d.content?.[0]?.text||'Could not reach AI.',aiNudgeLoading:false});
-  }catch{update({aiNudge:'Could not connect.',aiNudgeLoading:false});}
+  if(sorted.length===0){
+    update({aiNudge:"You have no pending tasks — enjoy the break, you've earned it!",aiNudgeLoading:false});
+    return;
+  }
+
+  const top=sorted[0];
+  const second=sorted[1];
+  const dl=daysLeft(top.dueDate);
+  const overdue=dl<0;
+  const urgent=dl<=1;
+  const topDelays=S.delays[top.id]||0;
+
+  // Nudge 1 — based on the #1 priority task
+  const nudge1Templates=[
+    overdue
+      ?[`"${top.title}" is overdue — even 20 minutes on it right now will stop the pile from growing.`,
+        `Your most urgent task is "${top.title}" and it's already past due — open it up and tackle just the first step.`,
+        `"${top.title}" needed to be done already — start it now, even for 15 minutes, to break the cycle.`]
+      :urgent
+      ?[`"${top.title}" is due ${dl===0?'today':'tomorrow'} — set a timer for 25 minutes and knock out a solid chunk right now.`,
+        `You have ${dl===0?'today':'until tomorrow'} for "${top.title}" — starting now gives you the best chance of finishing strong.`,
+        `"${top.title}" is your most urgent task and due ${dl===0?'today':'tomorrow'} — even getting started tonight removes tomorrow\'s stress.`]
+      :[`Your top priority right now is "${top.title}" (due ${fmt(top.dueDate)}) — a focused ${top.estimatedHours<=1?'30-minute':'1-hour'} session today will make a real difference.`,
+        `"${top.title}" is ranked #1 this week — schedule ${top.estimatedHours<=1?'30 minutes':'an hour'} for it today before other things take over.`,
+        `Block out ${top.estimatedHours<=1?'30 minutes':'1–2 hours'} for "${top.title}" today — it's your highest priority task and due ${fmt(top.dueDate)}.`]
+  ];
+  const n1=pick(nudge1Templates.flat?nudge1Templates:nudge1Templates[0]);
+
+  // Nudge 2 — based on delay history, second task, or motivational
+  let n2;
+  if(topDelays>=2){
+    n2=pick([
+      `You've delayed "${top.title}" ${topDelays} times — your brain is avoiding it because it feels big, so just open it and do the first 10 minutes only.`,
+      `"${top.title}" has been pushed back ${topDelays} times — that\'s your limbic system talking. Override it with just one small step today.`,
+      `Every delay on "${top.title}" makes it feel heavier. Break the cycle: commit to just 15 minutes on it — nothing more.`
+    ]);
+  } else if(second){
+    const dl2=daysLeft(second.dueDate);
+    n2=pick([
+      `After that, "${second.title}" is your next priority — it's due ${fmt(second.dueDate)} and needs about ${second.estimatedHours}h total.`,
+      `Don't forget "${second.title}" either — it's due ${fmt(second.dueDate)} and will take around ${second.estimatedHours}h, so plan for it this week.`,
+      `"${second.title}" is sitting at #2 on your list — ${dl2<=3?'it\'s coming up soon, so get ahead of it':'worth blocking time for later this week'}.`
+    ]);
+  } else {
+    n2=pick([
+      `You only have one task left — clear it and give yourself the rest of the day guilt-free.`,
+      `Once you tackle "${top.title}", your week is clear — that\'s a great position to be in.`,
+      `Finishing "${top.title}" will clear your entire task list — that feeling of being done is worth starting right now.`
+    ]);
+  }
+
+  // Small delay to feel like it's "thinking"
+  setTimeout(()=>{
+    update({aiNudge: n1+'\n\n'+n2, aiNudgeLoading:false});
+  }, 600);
 }
-async function insight(){
+
+function insight(){
   if(S.aiInsightLoading)return;
   update({aiInsightLoading:true,aiInsight:''});
-  const sm=S.tasks.slice(0,12).map(t=>`"${t.title}": imp=${t.importance}/5, effort=${t.estimatedHours}h, delayed=${S.delays[t.id]||0}x, done=${t.done}`).join('\n');
-  const pt=patterns().map(p=>p.title).join(', ');
-  try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,
-        system:'You are FlowAI brain science coach for teens. Warm, insightful, real. Plain text no markdown. 2 short paragraphs: explain patterns, then 2 science-backed strategies. Reference specific task names.',
-        messages:[{role:'user',content:`Tasks:\n${sm}\nPatterns: ${pt}\nAnalyze and give strategies.`}]})});
-    const d=await r.json();update({aiInsight:d.content?.[0]?.text||'Could not get insight.',aiInsightLoading:false});
-  }catch{update({aiInsight:'Could not connect.',aiInsightLoading:false});}
+
+  const pt=patterns();
+  const pending=S.tasks.filter(t=>!t.done);
+  const done=S.tasks.filter(t=>t.done);
+  const totalDelays=Object.values(S.delays).reduce((s,v)=>s+v,0);
+  const sorted=[...pending].sort((a,b)=>priorityScore(b)-priorityScore(a));
+  const top=sorted[0];
+
+  // Build paragraph 1 — describe what the data shows
+  let para1='';
+  const hasEffortAvoidance=pt.find(p=>p.type==='effort_avoidance'||p.title==='Effort avoidance');
+  const hasEasyFirst=pt.find(p=>p.type==='easy_first'||p.title==='Easy-first bias');
+  const hasRepeatDelay=pt.find(p=>p.title==='Repeat delays');
+  const hasOverdue=pt.find(p=>p.title==='Overdue pile-up');
+  const allHealthy=pt.find(p=>p.title==='No patterns detected');
+
+  if(allHealthy){
+    para1=pick([
+      `Looking at your task history, your habits are actually in good shape right now. You\'re completing tasks across different categories and not showing signs of systematic avoidance. ${done.length>0?`You\'ve completed ${done.length} task${done.length!==1?'s':''} already, which shows real follow-through.`:''}`,
+      `Your data looks healthy — no major avoidance patterns, no pile-ups, and your task mix looks balanced. ${totalDelays===0?'Zero delays recorded so far, which is impressive.':'Keep monitoring your delays to catch patterns early.'}`,
+    ]);
+  } else if(hasRepeatDelay && hasRepeatDelay.taskName){
+    para1=pick([
+      `Your task data shows a clear pattern around "${hasRepeatDelay.taskName}" — you\'ve delayed it ${hasRepeatDelay.delayCount} times now. This is classic Zeigarnik load: the longer a task sits incomplete, the more psychological weight it builds up, which paradoxically makes you avoid it more, not less. ${hasEffortAvoidance?`The pattern is even clearer because you\'re also avoiding other high-effort tasks, suggesting your brain is in effort-avoidance mode this week.`:''}`,
+      `The standout pattern in your data is "${hasRepeatDelay.taskName}" being delayed ${hasRepeatDelay.delayCount} times. Your prefrontal cortex knows it\'s important, but your limbic system keeps generating a threat response when you think about starting it. ${hasEasyFirst?'Meanwhile, you tend to complete easier tasks first, which gives a false sense of productivity while the important work waits.':'This is one of the most common procrastination traps teens face.'}`,
+    ]);
+  } else if(hasEasyFirst){
+    para1=pick([
+      `Your completion patterns show an easy-first bias — the tasks you\'ve finished tend to be lower-importance than the ones still pending. Your brain is chasing the dopamine hit from completing easy tasks while avoiding the cognitive friction of harder, more important work. ${top?`Right now, "${top.title}" is sitting at the top of your priority list but hasn\'t been started.`:''}`,
+      `There\'s a clear gap between what you\'re completing and what needs to get done. You\'re gravitating toward lower-stakes tasks — this is cognitive ease bias, where the brain prefers tasks that feel easier to process. ${pending.length>0?`You have ${pending.length} pending tasks, and the highest-priority ones are the ones being avoided.`:''}`,
+    ]);
+  } else if(hasOverdue){
+    para1=pick([
+      `You\'ve got a few overdue tasks building up, which is a sign of decision paralysis — when too many urgent things pile up, the brain\'s cortisol response actually impairs the prefrontal cortex, making it harder to prioritise and plan. It\'s a frustrating loop: the more overdue tasks you have, the harder it feels to start any of them.`,
+      `The overdue pile is a cortisol trap — stress about undone tasks makes planning harder, which leads to more avoidance, which creates more stress. The only way out is to pick the single smallest overdue item and complete just that one thing. Even one completion lowers cortisol and restores your brain\'s planning capacity.`,
+    ]);
+  } else {
+    para1=pick([
+      `Your task patterns show some signs of effort avoidance this week — your brain is steering you away from high-effort tasks before you\'ve even started them. This is called effort discounting: the brain overestimates how unpleasant a task will be, predicts discomfort, and triggers avoidance. The reality is almost always easier than the anticipation.`,
+      `Looking at your data, you\'re showing early signs of avoidance — tasks are accumulating and delays are adding up. This is normal, but worth catching early. Your brain is doing what brains do: protecting you from predicted discomfort. The trick is to make the first step so small that the threat response doesn\'t trigger.`,
+    ]);
+  }
+
+  // Build paragraph 2 — 2 specific strategies
+  let para2='';
+  if(hasRepeatDelay && hasRepeatDelay.taskName){
+    para2=pick([
+      `Two strategies for your situation: First, use implementation intentions for "${hasRepeatDelay.taskName}" — instead of "I\'ll work on it later," say exactly "I will work on ${hasRepeatDelay.taskName} at [specific time] for 15 minutes." Research shows this triples follow-through. Second, shrink the task — your first session goal should be embarrassingly small, like just opening the document and reading the instructions. Starting breaks the avoidance loop.`,
+      `Here\'s what the science says works for repeat delays: First, pair "${hasRepeatDelay.taskName}" with something you enjoy — work on it right before something fun, so your brain starts associating it with reward. Second, tell someone your specific plan for it today — social accountability activates a different part of the brain and dramatically increases follow-through.`,
+    ]);
+  } else if(hasEasyFirst){
+    para2=pick([
+      `Two strategies: First, try "eating the frog" — do your hardest task (${top?`"${top.title}"`:' your top priority'}) as the very first thing tomorrow, before checking any messages or doing anything else. Your willpower and focus are highest in the morning. Second, give yourself a "hard task quota" — you\'re not allowed to complete any easy task until you\'ve logged at least 30 minutes on a high-importance one.`,
+      `Science-backed fixes for easy-first bias: First, reframe ${top?`"${top.title}"`:'your top task'} — instead of thinking about the whole task, only think about the next 20 minutes. Your brain evaluates tasks based on anticipated effort, so shrinking the mental frame reduces the avoidance trigger. Second, remove easy tasks from your view temporarily — hide completed items and only look at your top 3 priorities.`,
+    ]);
+  } else {
+    para2=pick([
+      `Two strategies that work: First, use the 2-minute rule as a wedge — tell yourself you\'ll only work on ${top?`"${top.title}"`:'your top task'} for 2 minutes. You almost certainly won\'t stop after 2 minutes, but the tiny commitment bypasses your brain\'s threat response and gets you started. Second, schedule a specific "focus block" in your calendar today — vague intentions don\'t activate planning circuits the way specific commitments do.`,
+      `Here\'s what to try: First, set a timer for 25 minutes and work on ${top?`"${top.title}"`:'your top task'} with everything else closed — no phone, no other tabs. The Pomodoro technique works because time-boxing makes tasks feel finite and less threatening. Second, after each work session, write down exactly where you stopped and what the next step is — this closes the Zeigarnik loop and makes it much easier to restart next time.`,
+    ]);
+  }
+
+  setTimeout(()=>{
+    update({aiInsight: para1+'\n\n'+para2, aiInsightLoading:false});
+  }, 800);
 }
+
 window.nudge=nudge;window.insight=insight;
 
 /* ════════════════════════════════════════════════════════════════════
@@ -581,8 +692,13 @@ function renderTasks(){
   const sorted=[...S.tasks].sort((a,b)=>priorityScore(b)-priorityScore(a));
   const filtered=S.filter==='all'?sorted:S.filter==='done'?sorted.filter(t=>t.done):sorted.filter(t=>t.category===S.filter);
   const rankMap={};sorted.filter(t=>!t.done).forEach((t,i)=>rankMap[t.id]=i+1);
-  return`<div class="tag-row" style="margin-bottom:14px">
-    ${[['all','All'],['school','School'],['extracurricular','Extra'],['personal','Personal'],['done','Done']].map(([v,l])=>`
+  return`
+  <div style="margin-bottom:20px">
+    <h2 style="font-family:var(--font-body);font-size:24px;font-weight:500;color:var(--text);letter-spacing:-0.3px">My tasks</h2>
+    <p style="font-size:13px;color:var(--text3);margin-top:3px">Ranked by urgency, importance &amp; effort</p>
+  </div>
+  <div class="tag-row" style="margin-bottom:14px">
+    ${[['all','All tasks'],['school','School'],['extracurricular','Extracurricular'],['personal','Personal'],['done','Completed']].map(([v,l])=>`
       <button class="btn-sm ${S.filter===v?'btn-primary':''}" style="${S.filter!==v?'border-color:var(--border2);color:var(--text3)':''}" onclick="update({filter:'${v}'})">
         ${l}</button>`).join('')}
   </div>
@@ -601,9 +717,9 @@ function renderTasks(){
               <span style="font-size:15px;font-weight:500;${t.done?'text-decoration:line-through;color:var(--text3)':''}">${t.title}</span>
             </div>
             <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:${st>0?'8px':'0'}">
-              <span class="badge badge-${t.category==='extracurricular'?'extra':t.category}">${t.category==='extracurricular'?'Extra':t.category[0].toUpperCase()+t.category.slice(1)}</span>
-              ${!t.done?`<span class="badge badge-${urg}">${urg} priority</span>`:''}
-              ${ov?`<span class="badge badge-high">Overdue</span>`:''}
+              <span class="badge badge-${t.category==='extracurricular'?'extra':t.category}">${t.category==='extracurricular'?'Extracurricular':t.category[0].toUpperCase()+t.category.slice(1)}</span>
+              ${!t.done?`<span class="badge badge-${urg}">${urg==='high'?'High priority':urg==='med'?'Medium priority':'Low priority'}</span>`:''}
+              ${ov?`<span class="badge badge-high">Task overdue</span>`:''}
               ${dc>0?`<span class="badge badge-med">Delayed ${dc}×</span>`:''}
               ${t.gcalImported?`<span class="gcal-badge"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Google Cal</span>`:''}
               <span style="font-size:12px;color:var(--text3)">Due ${fmt(t.dueDate)} · ${t.estimatedHours}h</span>
@@ -651,8 +767,11 @@ window.closeConfirm=function(){
 function renderPatterns(){
   const pt=patterns(),sc={high:'var(--coral)',med:'var(--amber)',low:'var(--mint)'};
   const pending=S.tasks.filter(t=>!t.done);
-  return`<h2 style="font-size:17px;margin-bottom:4px">Procrastination patterns</h2>
-  <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">FlowAI watches how you interact with tasks and detects emotional bias — backed by neuroscience.</p>
+  return`
+  <div style="margin-bottom:20px">
+    <h2 style="font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--text);letter-spacing:-0.5px">Procrastination patterns</h2>
+    <p style="font-size:13px;color:var(--text3);margin-top:3px">Emotional bias detected in how you manage your tasks — backed by neuroscience</p>
+  </div>
   ${pt.map(p=>`<div class="pattern-card pattern-${p.severity}">
     <span style="font-size:22px;margin-top:1px">${p.icon}</span>
     <div style="flex:1">
@@ -661,7 +780,7 @@ function renderPatterns(){
       ${p.brain?`<div class="brain-box">${p.brain}<div style="margin-top:6px;color:var(--mint2)"><strong>Try this:</strong> ${p.fix}</div></div>`:''}
     </div></div>`).join('')}
   <div class="divider"></div>
-  <h2 style="font-size:16px;margin-bottom:4px">Task delay log</h2>
+  <h2 style="font-family:var(--font-head);font-size:17px;font-weight:700;margin-bottom:4px">Task delay log</h2>
   <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Tap "+ Delay" whenever you push a task back. FlowAI learns your patterns over time.</p>
   ${pending.map(t=>{const d=S.delays[t.id]||0;return`
     <div class="task-card">
@@ -703,9 +822,13 @@ function renderSchedule(){
     <div style="font-size:15px;color:var(--text2);margin-bottom:16px">Set your weekly free time to see your schedule.</div>
     <button class="btn-primary" onclick="openSetup()">Set up this week →</button></div>`;
   const plan=buildSchedule();if(!plan)return'';
-  return`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-    <h2 style="font-size:17px">This week's schedule</h2>
-    <button class="btn-sm" style="color:var(--accent2);border-color:rgba(124,106,247,0.3)" onclick="openSetup()">Edit hours</button>
+  return`
+  <div style="margin-bottom:20px">
+    <h2 style="font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--text);letter-spacing:-0.5px">My schedule</h2>
+    <p style="font-size:13px;color:var(--text3);margin-top:3px">Tasks fitted into your free time blocks this week</p>
+  </div>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+    <button class="btn-sm" style="color:var(--accent2);border-color:rgba(124,106,247,0.3)" onclick="openSetup()">Edit free time</button>
   </div>
   ${plan.map(day=>`<div class="sched-day">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${day.scheduled.length?'8px':'0'}">
@@ -745,7 +868,12 @@ function renderCalendar(){
   });
   const now=new Date();
   const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  return`<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+  return`
+  <div style="margin-bottom:20px">
+    <h2 style="font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--text);letter-spacing:-0.5px">My calendar</h2>
+    <p style="font-size:13px;color:var(--text3);margin-top:3px">All tasks by due date</p>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
     <button class="btn-sm btn-ghost" onclick="update({calMonth:${m===0?11:m-1},calYear:${m===0?y-1:y}})">‹</button>
     <h2 style="flex:1;text-align:center;font-size:17px">${MN[m]} ${y}</h2>
     <button class="btn-sm btn-ghost" onclick="update({calMonth:${m===11?0:m+1},calYear:${m===11?y+1:y}})">›</button>
