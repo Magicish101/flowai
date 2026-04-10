@@ -940,10 +940,10 @@ function render(){
     </div>` : ''}
     <div class="main">
       <div class="stat-grid">
-        <div class="stat-card"><div style="font-size:12px;color:var(--text3);letter-spacing:0.3px">PENDING</div><div class="stat-val" style="color:var(--accent2)">${pend.length}</div></div>
-        <div class="stat-card"><div style="font-size:12px;color:var(--text3);letter-spacing:0.3px">OVERDUE</div><div class="stat-val" style="color:${ov.length>0?'var(--coral)':'var(--text3)'}">${ov.length}</div></div>
-        <div class="stat-card"><div style="font-size:12px;color:var(--text3);letter-spacing:0.3px">DONE</div><div class="stat-val" style="color:var(--mint)">${S.tasks.filter(t=>t.done).length}</div></div>
-        <div class="stat-card"><div style="font-size:12px;color:var(--text3);letter-spacing:0.3px">DELAYS</div><div class="stat-val" style="color:${td>3?'var(--coral)':'var(--amber)'}">${td}</div></div>
+        <div class="stat-card"><div style="font-size:12px;color:var(--text3);letter-spacing:0.3px">TASKS PENDING</div><div class="stat-val" style="color:var(--accent2)">${pend.length}</div></div>
+        <div class="stat-card"><div style="font-size:12px;color:var(--text3);letter-spacing:0.3px">TASKS OVERDUE</div><div class="stat-val" style="color:${ov.length>0?'var(--coral)':'var(--text3)'}">${ov.length}</div></div>
+        <div class="stat-card"><div style="font-size:12px;color:var(--text3);letter-spacing:0.3px">TASKS DONE</div><div class="stat-val" style="color:var(--mint)">${S.tasks.filter(t=>t.done).length}</div></div>
+        <div class="stat-card"><div style="font-size:12px;color:var(--text3);letter-spacing:0.3px">TIMES DELAYED</div><div class="stat-val" style="color:${td>3?'var(--coral)':'var(--amber)'}">${td}</div></div>
       </div>
       <div class="ai-panel">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${S.aiNudge?'10px':'0'}">
