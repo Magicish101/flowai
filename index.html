@@ -633,8 +633,9 @@ window.closeBM=function(){_bd=null;document.getElementById('modal-layer').innerH
    ════════════════════════════════════════════════════════════════════ */
 function buildSchedule(){
   if(!S.weekSlots)return null;
+  const today=new Date();today.setHours(0,0,0,0);
   const ws=getWeekStart();
-  // Sort: most urgent first, then by priority score
+
   const pending=[...S.tasks].filter(t=>!t.done).sort((a,b)=>{
     const au=Math.max(0,daysLeft(a.dueDate)),bu=Math.max(0,daysLeft(b.dueDate));
     if(au!==bu)return au-bu;
@@ -645,11 +646,20 @@ function buildSchedule(){
 
   return S.weekSlots.map((slot,i)=>{
     const date=new Date(ws.getTime()+i*86400000);
+    date.setHours(0,0,0,0);
     const dateStr=date.toISOString().split('T')[0];
-    const totalFree=blockHours(slot.blocks);
-    if(totalFree===0)return{day:slot.day,date:dateStr,totalFree,blocks:slot.blocks,scheduled:[]};
 
-    // Only tasks that still have hours remaining
+    // Skip days in the past
+    if(date<today)return null;
+
+    // Use saved blocks, or default to 3pm-5pm if none set
+    const blocks=slot.blocks&&slot.blocks.length>0
+      ?slot.blocks
+      :[{id:'default',start:'15:00',end:'17:00'}];
+
+    const totalFree=blockHours(blocks);
+    if(totalFree===0)return{day:slot.day,date:dateStr,totalFree,blocks,scheduled:[]};
+
     const eligible=pending.filter(t=>remaining[t.id]>0.01);
     const assignments=[];
     let minutesUsed=0;
@@ -658,7 +668,7 @@ function buildSchedule(){
     for(const task of eligible){
       if(minutesUsed>=totalMins-14)break;
       const avail=(totalMins-minutesUsed)/60;
-      const chunk=Math.min(remaining[task.id],avail,2); // max 2h per task per day
+      const chunk=Math.min(remaining[task.id],avail,2);
       if(chunk<0.25)continue;
       const cr=Math.round(chunk*4)/4;
       remaining[task.id]=Math.max(0,remaining[task.id]-cr);
@@ -666,13 +676,12 @@ function buildSchedule(){
       assignments.push({...task,chunk:cr,remainingAfter:Math.max(0,remaining[task.id])});
     }
 
-    // Map assignments into real time windows from the blocks
     const scheduled=[];
     let bIdx=0,bUsed=0;
     for(const a of assignments){
       let need=a.chunk*60;
-      while(need>0.5&&bIdx<slot.blocks.length){
-        const b=slot.blocks[bIdx];
+      while(need>0.5&&bIdx<blocks.length){
+        const b=blocks[bIdx];
         const bStart=toMins(b.start),bEnd=toMins(b.end);
         const bAvail=Math.max(0,bEnd-bStart-bUsed);
         if(bAvail<1){bIdx++;bUsed=0;continue;}
@@ -683,8 +692,8 @@ function buildSchedule(){
         if(bUsed>=bEnd-bStart){bIdx++;bUsed=0;}
       }
     }
-    return{day:slot.day,date:dateStr,totalFree,blocks:slot.blocks,scheduled};
-  });
+    return{day:slot.day,date:dateStr,totalFree,blocks,scheduled};
+  }).filter(Boolean);
 }
 
 /* ── Tab renderers ─────────────────────────────────────────────────── */
