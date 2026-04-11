@@ -19,7 +19,7 @@
   --text:#f0eeff;--text2:#b8b3d8;--text3:#7a748f;
   --border:rgba(124,106,247,0.18);--border2:rgba(124,106,247,0.35);
   --radius:14px;--radius-sm:8px;
-  --font-head:'Syne',sans-serif;--font-body:'DM Sans',sans-serif;
+  --font-head:'Syne',sans-serif;--font-body:'Syne',sans-serif;
   --glow:0 0 20px rgba(124,106,247,0.25);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -695,7 +695,7 @@ function renderTasks(){
   return`
   <div style="margin-bottom:20px;display:flex;align-items:center;justify-content:space-between">
     <div>
-      <h2 style="font-family:var(--font-body);font-size:24px;font-weight:500;color:var(--text);letter-spacing:-0.3px">My tasks</h2>
+      <h2 style="font-family:var(--font-head);font-size:24px;font-weight:800;color:var(--text);letter-spacing:-0.5px">My tasks</h2>
       <p style="font-size:13px;color:var(--text3);margin-top:3px">Ranked by urgency, importance &amp; effort</p>
     </div>
     <button class="btn-primary btn-sm" onclick="openAdd()" style="flex-shrink:0">+ New task</button>
@@ -891,7 +891,7 @@ function renderCalendar(){
       const dt=tbd[day]||[];
       return`<div class="cal-cell ${it?'today':''}">
         <div class="cal-num">${day}</div>
-        ${dt.slice(0,2).map(t=>`<div class="cal-dot" style="background:${t.category==='school'?'rgba(124,106,247,0.25)':t.category==='extracurricular'?'rgba(67,217,162,0.2)':'rgba(255,209,102,0.2)'};color:${t.category==='school'?'var(--accent3)':t.category==='extracurricular'?'var(--mint2)':'var(--amber2)'}">${t.title}</div>`).join('')}
+        ${dt.slice(0,2).map(t=>`<div class="cal-dot" style="background:${t.category==='school'?'rgba(124,106,247,0.25)':t.category==='extracurricular'?'rgba(67,217,162,0.2)':'rgba(255,209,102,0.2)'};color:${t.category==='school'?'var(--accent3)':t.category==='extracurricular'?'var(--mint2)':'var(--amber2)'};cursor:pointer" onclick="alert('${t.title.replace(/'/g,"\\'")}${t.dueDate?' · Due '+fmt(t.dueDate):''}')" title="${t.title}">${t.title.length>25?t.title.slice(0,25)+'…':t.title}</div>`).join('')}
         ${dt.length>2?`<div style="font-size:9px;color:var(--text3)">+${dt.length-2}</div>`:''}
       </div>`;}).join('')}
   </div>
