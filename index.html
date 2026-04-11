@@ -693,9 +693,12 @@ function renderTasks(){
   const filtered=S.filter==='all'?sorted:S.filter==='done'?sorted.filter(t=>t.done):sorted.filter(t=>t.category===S.filter);
   const rankMap={};sorted.filter(t=>!t.done).forEach((t,i)=>rankMap[t.id]=i+1);
   return`
-  <div style="margin-bottom:20px">
-    <h2 style="font-family:var(--font-body);font-size:24px;font-weight:500;color:var(--text);letter-spacing:-0.3px">My tasks</h2>
-    <p style="font-size:13px;color:var(--text3);margin-top:3px">Ranked by urgency, importance &amp; effort</p>
+  <div style="margin-bottom:20px;display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <h2 style="font-family:var(--font-body);font-size:24px;font-weight:500;color:var(--text);letter-spacing:-0.3px">My tasks</h2>
+      <p style="font-size:13px;color:var(--text3);margin-top:3px">Ranked by urgency, importance &amp; effort</p>
+    </div>
+    <button class="btn-primary btn-sm" onclick="openAdd()" style="flex-shrink:0">+ New task</button>
   </div>
   <div class="tag-row" style="margin-bottom:14px">
     ${[['all','All tasks'],['school','School'],['extracurricular','Extracurricular'],['personal','Personal'],['done','Completed']].map(([v,l])=>`
@@ -994,7 +997,7 @@ function render(){
    ════════════════════════════════════════════════════════════════════ */
 
 const GCAL_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID_HERE.apps.googleusercontent.com';
-const GCAL_SCOPE     = 'https://www.googleapis.com/auth/calendar.readonly';
+const GCAL_SCOPE     = 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.calendarlist.readonly';
 const GCAL_DAYS      = 30; // how far ahead to pull events
 
 // Persisted gcal state
@@ -1035,24 +1038,65 @@ async function gcalFetchAndImport() {
 
   try {
     // Get user info for display
-    const meRes  = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+    const meRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       headers: { Authorization: 'Bearer ' + _gcalToken }
     });
     const me = await meRes.json();
 
-    // Get events from primary calendar
-    const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?`
-      + `timeMin=${encodeURIComponent(tMin)}&timeMax=${encodeURIComponent(tMax)}`
-      + `&singleEvents=true&orderBy=startTime&maxResults=100`;
-    const evRes  = await fetch(url, { headers: { Authorization: 'Bearer ' + _gcalToken } });
-    const evData = await evRes.json();
+    // Step 1: get list of ALL calendars the user has
+    const calListRes = await fetch(
+      'https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=50',
+      { headers: { Authorization: 'Bearer ' + _gcalToken } }
+    );
+    const calList = await calListRes.json();
 
-    if (evData.error) {
-      showToast('Calendar error: ' + evData.error.message); return;
+    if (calList.error) {
+      showToast('Calendar error: ' + calList.error.message); return;
     }
 
-    const events = (evData.items || []).filter(e => e.status !== 'cancelled');
-    if (events.length === 0) {
+    const calendars = (calList.items || []).filter(c =>
+      c.accessRole === 'owner' || c.accessRole === 'writer' || c.accessRole === 'reader'
+    );
+
+    if (calendars.length === 0) {
+      showToast('No calendars found.'); return;
+    }
+
+    showToast(`Fetching from ${calendars.length} calendar${calendars.length!==1?'s':''}…`);
+
+    // Step 2: fetch events from each calendar in parallel
+    const allEvents = [];
+    const seenIds = new Set();
+
+    await Promise.all(calendars.map(async (cal) => {
+      try {
+        const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cal.id)}/events?`
+          + `timeMin=${encodeURIComponent(tMin)}&timeMax=${encodeURIComponent(tMax)}`
+          + `&singleEvents=true&orderBy=startTime&maxResults=100`;
+        const res = await fetch(url, { headers: { Authorization: 'Bearer ' + _gcalToken } });
+        const data = await res.json();
+        if (data.items) {
+          data.items.forEach(ev => {
+            if (ev.status !== 'cancelled' && !seenIds.has(ev.id)) {
+              seenIds.add(ev.id);
+              // Tag with calendar name for context
+              allEvents.push({ ...ev, _calendarName: cal.summary, _calendarColor: cal.backgroundColor });
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('Could not fetch calendar:', cal.summary, e);
+      }
+    }));
+
+    // Sort all events by start time
+    allEvents.sort((a, b) => {
+      const aTime = a.start?.dateTime || a.start?.date || '';
+      const bTime = b.start?.dateTime || b.start?.date || '';
+      return aTime.localeCompare(bTime);
+    });
+
+    if (allEvents.length === 0) {
       showToast('No upcoming events found in the next 30 days.');
       sv('gcal', { connected: true, email: me.email, lastSync: new Date().toISOString() });
       S.gcal = { connected: true, email: me.email, lastSync: new Date().toISOString() };
@@ -1060,7 +1104,7 @@ async function gcalFetchAndImport() {
     }
 
     // Show import review modal
-    openImportModal(events, me.email);
+    openImportModal(allEvents, me.email);
 
   } catch (err) {
     showToast('Could not reach Google Calendar. Check your internet.');
@@ -1096,11 +1140,11 @@ function gcalEventToTask(ev) {
     estimatedHours,
     importance: 3,
     category,
-    notes: ev.description ? ev.description.slice(0, 200) : '',
+    notes: [ev._calendarName ? `📅 ${ev._calendarName}` : '', ev.description ? ev.description.slice(0, 180) : ''].filter(Boolean).join(' · '),
     subtasks: [],
     done: false,
     createdAt: Date.now(),
-    gcalId: ev.id,         // store so we can detect duplicates
+    gcalId: ev.id,
     gcalImported: true,
   };
 }
@@ -1231,23 +1275,22 @@ function openGcalSetupGuide() {
   const savedId = ld('gcalClientId','');
   document.getElementById('modal-layer').innerHTML = `
   <div class="modal-overlay" onclick="if(event.target===this)closeImport()">
-    <div class="modal" style="max-width:520px">
+    <div class="modal" style="max-width:480px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-        <span style="font-size:22px">🔧</span>
-        <h2>Set up Google Calendar sync</h2>
+        <span style="font-size:22px">📅</span>
+        <h2>Connect Google Calendar</h2>
       </div>
-      <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.7">
-        Takes about 10 minutes and is completely free. You only do this once — after that, syncing is one click.
+      <p style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.7">
+        To sync your Google Calendar, you need a Client ID from the app developer. Once you have it, paste it below — setup takes less than a minute.
       </p>
+
       ${[
-        ['1','Go to Google Cloud Console','Go to <a href="https://console.cloud.google.com" target="_blank" style="color:var(--accent2)">console.cloud.google.com</a> and sign in with your Google account'],
-        ['2','Create a new project','Click the project dropdown at the top → "New Project" → name it "FlowAI" → Create'],
-        ['3','Enable Calendar API','APIs &amp; Services → Library → search "Google Calendar API" → click it → Enable'],
-        ['4','Configure OAuth consent screen','APIs &amp; Services → OAuth consent screen → External → fill in app name "FlowAI" and your email → Next → Add scope → search "calendar.readonly" → add it → Next → Add yourself as a test user → Save'],
-        ['5','Create credentials','Credentials → Create Credentials → OAuth Client ID → Application type: Web application → under Authorised JavaScript origins add <strong style="color:var(--accent3)">https://yourusername.github.io</strong> (replace with your actual GitHub Pages URL, or <strong style="color:var(--accent3)">http://localhost:8080</strong> if running locally) → Create'],
-        ['6','Copy your Client ID','A popup shows your Client ID — copy it (it ends in <em>.apps.googleusercontent.com</em>)'],
+        ['1','Get the Client ID','Ask the FlowAI developer for the Client ID. It looks like a long string ending in <em>.apps.googleusercontent.com</em>'],
+        ['2','Paste it below','Copy the Client ID and paste it into the box below'],
+        ['3','Sign in with Google','Click Connect → and sign in with your Google account when prompted'],
+        ['4','Choose what to import','Review your upcoming events and select which ones to add as tasks'],
       ].map(([n,title,desc]) => `
-        <div style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start">
+        <div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-start">
           <div style="width:24px;height:24px;border-radius:50%;background:rgba(124,106,247,0.2);color:var(--accent2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;font-family:var(--font-head);margin-top:1px">${n}</div>
           <div>
             <div style="font-size:13px;font-weight:500;margin-bottom:2px">${title}</div>
@@ -1255,19 +1298,15 @@ function openGcalSetupGuide() {
           </div>
         </div>`).join('')}
 
-      <!-- Step 7: paste Client ID directly in the app — no code editing -->
-      <div style="display:flex;gap:12px;margin-bottom:4px;align-items:flex-start">
-        <div style="width:24px;height:24px;border-radius:50%;background:rgba(67,217,162,0.2);color:var(--mint2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;font-family:var(--font-head);margin-top:1px">7</div>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:500;margin-bottom:6px">Paste your Client ID below and connect</div>
-          <div style="display:flex;gap:8px">
-            <input id="gcal-id-input" placeholder="xxxx.apps.googleusercontent.com"
-              value="${savedId}" style="flex:1;font-size:13px"
-              oninput="this.value=this.value.trim()"/>
-            <button class="btn-primary" style="flex-shrink:0;white-space:nowrap" onclick="saveClientIdAndConnect()">Connect →</button>
-          </div>
-          <div style="font-size:11px;color:var(--text3);margin-top:5px">Saved in your browser — no code editing needed.</div>
+      <div style="background:rgba(124,106,247,0.07);border:1px solid rgba(124,106,247,0.2);border-radius:var(--radius-sm);padding:14px;margin-bottom:4px">
+        <label style="color:var(--accent3);margin-bottom:8px">Paste your Client ID here</label>
+        <div style="display:flex;gap:8px">
+          <input id="gcal-id-input" placeholder="xxxx.apps.googleusercontent.com"
+            value="${savedId}" style="flex:1;font-size:13px"
+            oninput="this.value=this.value.trim()"/>
+          <button class="btn-primary" style="flex-shrink:0;white-space:nowrap" onclick="saveClientIdAndConnect()">Connect →</button>
         </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px">Saved in your browser — you only need to do this once.</div>
       </div>
 
       <div class="brain-box" style="margin-top:12px">
