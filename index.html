@@ -634,7 +634,6 @@ window.closeBM=function(){_bd=null;document.getElementById('modal-layer').innerH
 function buildSchedule(){
   if(!S.weekSlots)return null;
   const today=new Date();today.setHours(0,0,0,0);
-  const ws=getWeekStart();
 
   const pending=[...S.tasks].filter(t=>!t.done).sort((a,b)=>{
     const au=Math.max(0,daysLeft(a.dueDate)),bu=Math.max(0,daysLeft(b.dueDate));
@@ -644,21 +643,22 @@ function buildSchedule(){
   const remaining={};
   pending.forEach(t=>{remaining[t.id]=+(t.estimatedHours||1)});
 
-  return S.weekSlots.map((slot,i)=>{
-    const date=new Date(ws.getTime()+i*86400000);
-    date.setHours(0,0,0,0);
+  const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  // Build 7 days starting from today
+  return Array.from({length:7},(_,i)=>{
+    const date=new Date(today.getTime()+i*86400000);
     const dateStr=date.toISOString().split('T')[0];
+    const dayName=DAYS[date.getDay()];
 
-    // Skip days in the past
-    if(date<today)return null;
-
-    // Use saved blocks, or default to 3pm-5pm if none set
-    const blocks=slot.blocks&&slot.blocks.length>0
+    // Find matching slot from weekSlots by day name, or use default
+    const slot=S.weekSlots.find(s=>s.day===dayName);
+    const blocks=slot&&slot.blocks&&slot.blocks.length>0
       ?slot.blocks
       :[{id:'default',start:'15:00',end:'17:00'}];
 
     const totalFree=blockHours(blocks);
-    if(totalFree===0)return{day:slot.day,date:dateStr,totalFree,blocks,scheduled:[]};
+    if(totalFree===0)return{day:dayName,date:dateStr,totalFree,blocks,scheduled:[]};
 
     const eligible=pending.filter(t=>remaining[t.id]>0.01);
     const assignments=[];
@@ -692,8 +692,8 @@ function buildSchedule(){
         if(bUsed>=bEnd-bStart){bIdx++;bUsed=0;}
       }
     }
-    return{day:slot.day,date:dateStr,totalFree,blocks,scheduled};
-  }).filter(Boolean);
+    return{day:dayName,date:dateStr,totalFree,blocks,scheduled};
+  });
 }
 
 /* ── Tab renderers ─────────────────────────────────────────────────── */
@@ -846,7 +846,7 @@ function renderSchedule(){
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${day.scheduled.length?'8px':'0'}">
       <div>
         <span style="font-family:var(--font-head);font-weight:700;font-size:15px">${day.day}</span>
-        <span style="font-size:12px;color:var(--text3);margin-left:6px">${day.date}</span>
+        <span style="font-size:12px;color:var(--text3);margin-left:6px">${fmt(day.date)}${day.date===new Date().toISOString().split('T')[0]?' · Today':''}</span>
       </div>
       <span style="font-size:12px;color:${day.totalFree===0?'var(--text3)':day.totalFree>=4?'var(--mint)':'var(--accent2)'}">
         ${day.totalFree>0?day.totalFree.toFixed(1)+'h free':'Rest day'}
