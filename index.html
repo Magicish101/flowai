@@ -147,11 +147,11 @@ function fmt(str){if(!str)return'';return new Date(str+'T12:00:00').toLocaleDate
 function toMins(t){if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m}
 function toTime(m){return String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
 function blockHours(blocks){return(blocks||[]).reduce((s,b)=>{const d=(toMins(b.end)-toMins(b.start))/60;return s+(d>0?d:0)},0)}
-
+ 
 /* ── Storage ───────────────────────────────────────────────────────── */
 function ld(k,d){try{const v=localStorage.getItem('fl_'+k);return v?JSON.parse(v):d}catch{return d}}
 function sv(k,v){try{localStorage.setItem('fl_'+k,JSON.stringify(v))}catch{}}
-
+ 
 /* ── Brain science ─────────────────────────────────────────────────── */
 const BRAIN={
   effort_avoidance:{title:'Effort avoidance',icon:'🧠',desc:'Your brain keeps pushing back the big tasks.',
@@ -167,7 +167,7 @@ const BRAIN={
     brain:'<strong>Why your brain does this:</strong> Too many urgent items causes <strong>decision paralysis</strong>. Stress hormones (cortisol) impair the prefrontal cortex — the region needed to plan.',
     fix:'Pick ONE task — the smallest overdue item — and do just that. Clearing one lowers cortisol and restores planning.'}
 };
-
+ 
 /* ── Default week slots ────────────────────────────────────────────── */
 function defaultSlots(){
   const ws=getWeekStart();
@@ -177,7 +177,7 @@ function defaultSlots(){
     return{day,date,blocks};
   });
 }
-
+ 
 /* ── App state ─────────────────────────────────────────────────────── */
 const S={
   tasks:ld('tasks',[
@@ -193,7 +193,7 @@ const S={
   aiInsight:'',aiInsightLoading:false,
   calYear:new Date().getFullYear(),calMonth:new Date().getMonth(),
 };
-
+ 
 function update(partial){
   Object.assign(S,partial);
   if(partial.tasks!==undefined)sv('tasks',S.tasks);
@@ -202,7 +202,7 @@ function update(partial){
   render();
 }
 window.update=update;
-
+ 
 /* ── Pattern analysis ──────────────────────────────────────────────── */
 function patterns(){
   const{tasks,delays}=S,res=[],pending=tasks.filter(t=>!t.done);
@@ -225,31 +225,31 @@ function patterns(){
   if(res.length===0)res.push({icon:'✓',title:'No patterns detected',desc:'Great job — your task habits look healthy.',brain:null,severity:'low'});
   return res;
 }
-
+ 
 /* ════════════════════════════════════════════════════════════════════
    SMART COACH — template-based, uses real task data, works everywhere
    No API key or internet connection needed for these features
    ════════════════════════════════════════════════════════════════════ */
-
+ 
 function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-
+ 
 function nudge(){
   if(S.aiNudgeLoading)return;
   update({aiNudgeLoading:true,aiNudge:''});
-
+ 
   const sorted=[...S.tasks].filter(t=>!t.done).sort((a,b)=>priorityScore(b)-priorityScore(a));
   if(sorted.length===0){
     update({aiNudge:"You have no pending tasks — enjoy the break, you've earned it!",aiNudgeLoading:false});
     return;
   }
-
+ 
   const top=sorted[0];
   const second=sorted[1];
   const dl=daysLeft(top.dueDate);
   const overdue=dl<0;
   const urgent=dl<=1;
   const topDelays=S.delays[top.id]||0;
-
+ 
   // Nudge 1 — based on the #1 priority task
   const nudge1Templates=[
     overdue
@@ -265,7 +265,7 @@ function nudge(){
         `Block out ${top.estimatedHours<=1?'30 minutes':'1–2 hours'} for "${top.title}" today — it's your highest priority task and due ${fmt(top.dueDate)}.`]
   ];
   const n1=pick(nudge1Templates.flat?nudge1Templates:nudge1Templates[0]);
-
+ 
   // Nudge 2 — based on delay history, second task, or motivational
   let n2;
   if(topDelays>=2){
@@ -288,24 +288,24 @@ function nudge(){
       `Finishing "${top.title}" will clear your entire task list — that feeling of being done is worth starting right now.`
     ]);
   }
-
+ 
   // Small delay to feel like it's "thinking"
   setTimeout(()=>{
     update({aiNudge: n1+'\n\n'+n2, aiNudgeLoading:false});
   }, 600);
 }
-
+ 
 function insight(){
   if(S.aiInsightLoading)return;
   update({aiInsightLoading:true,aiInsight:''});
-
+ 
   const pt=patterns();
   const pending=S.tasks.filter(t=>!t.done);
   const done=S.tasks.filter(t=>t.done);
   const totalDelays=Object.values(S.delays).reduce((s,v)=>s+v,0);
   const sorted=[...pending].sort((a,b)=>priorityScore(b)-priorityScore(a));
   const top=sorted[0];
-
+ 
   // Build paragraph 1 — describe what the data shows
   let para1='';
   const hasEffortAvoidance=pt.find(p=>p.type==='effort_avoidance'||p.title==='Effort avoidance');
@@ -313,7 +313,7 @@ function insight(){
   const hasRepeatDelay=pt.find(p=>p.title==='Repeat delays');
   const hasOverdue=pt.find(p=>p.title==='Overdue pile-up');
   const allHealthy=pt.find(p=>p.title==='No patterns detected');
-
+ 
   if(allHealthy){
     para1=pick([
       `Looking at your task history, your habits are actually in good shape right now. You\'re completing tasks across different categories and not showing signs of systematic avoidance. ${done.length>0?`You\'ve completed ${done.length} task${done.length!==1?'s':''} already, which shows real follow-through.`:''}`,
@@ -340,7 +340,7 @@ function insight(){
       `Looking at your data, you\'re showing early signs of avoidance — tasks are accumulating and delays are adding up. This is normal, but worth catching early. Your brain is doing what brains do: protecting you from predicted discomfort. The trick is to make the first step so small that the threat response doesn\'t trigger.`,
     ]);
   }
-
+ 
   // Build paragraph 2 — 2 specific strategies
   let para2='';
   if(hasRepeatDelay && hasRepeatDelay.taskName){
@@ -359,26 +359,26 @@ function insight(){
       `Here\'s what to try: First, set a timer for 25 minutes and work on ${top?`"${top.title}"`:'your top task'} with everything else closed — no phone, no other tabs. The Pomodoro technique works because time-boxing makes tasks feel finite and less threatening. Second, after each work session, write down exactly where you stopped and what the next step is — this closes the Zeigarnik loop and makes it much easier to restart next time.`,
     ]);
   }
-
+ 
   setTimeout(()=>{
     update({aiInsight: para1+'\n\n'+para2, aiInsightLoading:false});
   }, 800);
 }
-
+ 
 window.nudge=nudge;window.insight=insight;
-
+ 
 /* ════════════════════════════════════════════════════════════════════
    WEEKLY SETUP — separate DOM node, NO full re-renders while editing
    ════════════════════════════════════════════════════════════════════ */
 let _sd=null; // setup draft
-
+ 
 function openSetup(){
   _sd=S.weekSlots?JSON.parse(JSON.stringify(S.weekSlots)):defaultSlots();
   const ml=document.getElementById('modal-layer');
   ml.innerHTML=buildSetupHTML();
 }
 window.openSetup=openSetup;
-
+ 
 function buildSetupHTML(){
   return`<div class="modal-overlay" id="sov" onclick="if(event.target.id==='sov'&&${!!S.weekSlots})closeSetup()">
     <div class="modal" style="max-width:540px">
@@ -395,7 +395,7 @@ function buildSetupHTML(){
     </div>
   </div>`;
 }
-
+ 
 function buildDayHTML(s,di){
   const h=blockHours(s.blocks);
   return`<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">
@@ -410,7 +410,7 @@ function buildDayHTML(s,di){
     <button class="btn-sm btn-mint" style="font-size:11px;margin-top:4px" onclick="addBlock(${di})">+ Add time block</button>
   </div>`;
 }
-
+ 
 function buildBlockHTML(di,bi,b){
   const diff=(toMins(b.end)-toMins(b.start))/60;
   const dur=diff>0?diff.toFixed(1)+'h':'—';
@@ -422,7 +422,7 @@ function buildBlockHTML(di,bi,b){
     <button class="btn-sm btn-coral" style="padding:4px 8px;font-size:11px" onclick="rmBlock(${di},${bi})">✕</button>
   </div>`;
 }
-
+ 
 function refreshDayTotal(di){
   const h=blockHours(_sd[di].blocks);
   const el=document.getElementById('sd-tot-'+di);
@@ -432,7 +432,7 @@ function refreshBlocks(di){
   const el=document.getElementById('sd-blocks-'+di);
   if(el)el.innerHTML=_sd[di].blocks.map((b,bi)=>buildBlockHTML(di,bi,b)).join('');
 }
-
+ 
 window.updBlock=function(di,bi,field,val){
   _sd[di].blocks[bi][field]=val;
   const b=_sd[di].blocks[bi];
@@ -459,12 +459,12 @@ window.saveSetup=function(){
 window.closeSetup=function(){
   _sd=null;document.getElementById('modal-layer').innerHTML='';
 };
-
+ 
 /* ════════════════════════════════════════════════════════════════════
    TASK MODAL — separate DOM, sliders update only their label
    ════════════════════════════════════════════════════════════════════ */
 let _td=null; // task draft
-
+ 
 function openAdd(){
   _td={id:null,title:'',dueDate:todayStr(),estimatedHours:1,importance:3,category:'school',notes:'',subtasks:[]};
   document.getElementById('modal-layer').innerHTML=buildTaskHTML();
@@ -474,7 +474,7 @@ function openEdit(id){
   document.getElementById('modal-layer').innerHTML=buildTaskHTML();
 }
 window.openAdd=openAdd;window.openEdit=openEdit;
-
+ 
 function buildTaskHTML(){
   const f=_td,isEdit=!!f.id;
   return`<div class="modal-overlay" onclick="if(event.target===this)closeTM()">
@@ -538,7 +538,7 @@ function buildTaskHTML(){
     </div>
   </div>`;
 }
-
+ 
 function buildSubsHTML(){
   return(_td.subtasks||[]).map((s,i)=>`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
@@ -547,7 +547,7 @@ function buildSubsHTML(){
       <button class="btn-sm btn-coral" onclick="rmSub('${s.id}')">✕</button>
     </div>`).join('');
 }
-
+ 
 window.addSub=function(){
   const el=document.getElementById('new-sub');
   if(!el||!el.value.trim())return;
@@ -571,7 +571,7 @@ window.saveTask=function(){
   }
   document.getElementById('modal-layer').innerHTML='';_td=null;
 };
-
+ 
 /* ── Break-down modal ──────────────────────────────────────────────── */
 let _bd=null;
 window.openBreak=function(id){
@@ -627,7 +627,7 @@ window.saveBrk=function(){
   document.getElementById('modal-layer').innerHTML='';_bd=null;
 };
 window.closeBM=function(){_bd=null;document.getElementById('modal-layer').innerHTML='';};
-
+ 
 /* ════════════════════════════════════════════════════════════════════
    SMART SCHEDULE — fits tasks into actual time blocks by priority+due
    ════════════════════════════════════════════════════════════════════ */
@@ -642,19 +642,19 @@ function buildSchedule(){
   });
   const remaining={};
   pending.forEach(t=>{remaining[t.id]=+(t.estimatedHours||1)});
-
+ 
   return S.weekSlots.map((slot,i)=>{
     const date=new Date(ws.getTime()+i*86400000);
     const dateStr=date.toISOString().split('T')[0];
     const totalFree=blockHours(slot.blocks);
     if(totalFree===0)return{day:slot.day,date:dateStr,totalFree,blocks:slot.blocks,scheduled:[]};
-
+ 
     // Only tasks that still have hours remaining
     const eligible=pending.filter(t=>remaining[t.id]>0.01);
     const assignments=[];
     let minutesUsed=0;
     const totalMins=totalFree*60;
-
+ 
     for(const task of eligible){
       if(minutesUsed>=totalMins-14)break;
       const avail=(totalMins-minutesUsed)/60;
@@ -665,7 +665,7 @@ function buildSchedule(){
       minutesUsed+=cr*60;
       assignments.push({...task,chunk:cr,remainingAfter:Math.max(0,remaining[task.id])});
     }
-
+ 
     // Map assignments into real time windows from the blocks
     const scheduled=[];
     let bIdx=0,bUsed=0;
@@ -686,7 +686,7 @@ function buildSchedule(){
     return{day:slot.day,date:dateStr,totalFree,blocks:slot.blocks,scheduled};
   });
 }
-
+ 
 /* ── Tab renderers ─────────────────────────────────────────────────── */
 function renderTasks(){
   const sorted=[...S.tasks].sort((a,b)=>priorityScore(b)-priorityScore(a));
@@ -717,7 +717,7 @@ function renderTasks(){
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px">
               ${rankMap[t.id]&&!t.done?`<span style="font-family:var(--font-head);font-size:11px;font-weight:700;color:var(--accent);background:rgba(124,106,247,0.15);padding:2px 7px;border-radius:99px">#${rankMap[t.id]}</span>`:''}
-              <span style="font-size:15px;font-weight:500;${t.done?'text-decoration:line-through;color:var(--text3)':''}">${t.title}</span>
+              <span style="font-size:15px;font-weight:500;${t.done?'text-decoration:line-through;color:var(--text3)':''}overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;display:block">${t.title}</span>
             </div>
             <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:${st>0?'8px':'0'}">
               <span class="badge badge-${t.category==='extracurricular'?'extra':t.category}">${t.category==='extracurricular'?'Extracurricular':t.category[0].toUpperCase()+t.category.slice(1)}</span>
@@ -766,7 +766,7 @@ window.confirmDel=function(id){
 window.closeConfirm=function(){
   document.getElementById('modal-layer').innerHTML='';
 };
-
+ 
 function renderPatterns(){
   const pt=patterns(),sc={high:'var(--coral)',med:'var(--amber)',low:'var(--mint)'};
   const pending=S.tasks.filter(t=>!t.done);
@@ -818,7 +818,7 @@ function renderPatterns(){
   </div>`;
 }
 window.delayt=id=>update({delays:{...S.delays,[id]:(S.delays[id]||0)+1}});
-
+ 
 function renderSchedule(){
   if(!S.weekSlots)return`<div style="text-align:center;padding:4rem 1rem">
     <div style="font-size:40px;margin-bottom:12px">📅</div>
@@ -858,7 +858,7 @@ function renderSchedule(){
       </div>`).join('')}
   </div>`).join('')}`;
 }
-
+ 
 function renderCalendar(){
   const{calYear:y,calMonth:m}=S;
   const dim=new Date(y,m+1,0).getDate();
@@ -903,14 +903,14 @@ function renderCalendar(){
       </div>`).join('')}
   </div>`;
 }
-
+ 
 /* ── Main render ───────────────────────────────────────────────────── */
 function render(){
   const pend=S.tasks.filter(t=>!t.done);
   const ov=S.tasks.filter(t=>!t.done&&daysLeft(t.dueDate)<0);
   const td=Object.values(S.delays).reduce((s,v)=>s+v,0);
   const tabs=[['tasks','Tasks'],['procrastination','🧠 Patterns'],['schedule','Schedule'],['calendar','Calendar']];
-
+ 
   document.getElementById('root').innerHTML=`
     <nav class="nav">
       <span style="font-family:var(--font-head);font-weight:800;font-size:17px;color:var(--accent2);margin-right:8px;letter-spacing:-0.5px">FlowAI</span>
@@ -969,18 +969,18 @@ function render(){
       </div>
       <div style="height:env(safe-area-inset-bottom,0px)"></div>
     </div>`;
-
+ 
   // Show setup modal on first load
   if(!S.weekSlots&&!_sd){
     openSetup();
   }
 }
-
+ 
 /* ════════════════════════════════════════════════════════════════════
    GOOGLE CALENDAR SYNC
    Uses Google Identity Services (token model) + Calendar REST API.
    No backend needed — pure client-side OAuth.
-
+ 
    SETUP (takes ~10 min):
    1. Go to https://console.cloud.google.com
    2. Create a new project (e.g. "FlowAI")
@@ -995,16 +995,16 @@ function render(){
         (e.g. http://localhost or chrome-extension:// or file://)
    6. Copy the Client ID and paste it below ↓
    ════════════════════════════════════════════════════════════════════ */
-
+ 
 const GCAL_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID_HERE.apps.googleusercontent.com';
 const GCAL_SCOPE     = 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.calendarlist.readonly';
 const GCAL_DAYS      = 30; // how far ahead to pull events
-
+ 
 // Persisted gcal state
 S.gcal = ld('gcal', { connected: false, email: '', lastSync: null });
-
+ 
 let _gcalToken = null; // in-memory only, never stored
-
+ 
 /* ── Token request via Google Identity Services ── */
 function gcalConnect() {
   // Check localStorage for a previously saved Client ID first
@@ -1019,7 +1019,7 @@ function gcalConnect() {
   gcalConnectWithId(activeId);
 }
 window.gcalConnect = gcalConnect;
-
+ 
 function gcalDisconnect() {
   _gcalToken = null;
   sv('gcal', { connected: false, email: '', lastSync: null });
@@ -1027,7 +1027,7 @@ function gcalDisconnect() {
   render();
 }
 window.gcalDisconnect = gcalDisconnect;
-
+ 
 /* ── Fetch events from Google Calendar API ── */
 async function gcalFetchAndImport() {
   showToast('Fetching your Google Calendar events…');
@@ -1035,39 +1035,39 @@ async function gcalFetchAndImport() {
   const future = new Date(now.getTime() + GCAL_DAYS * 86400000);
   const tMin   = now.toISOString();
   const tMax   = future.toISOString();
-
+ 
   try {
     // Get user info for display
     const meRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       headers: { Authorization: 'Bearer ' + _gcalToken }
     });
     const me = await meRes.json();
-
+ 
     // Step 1: get list of ALL calendars the user has
     const calListRes = await fetch(
       'https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=50',
       { headers: { Authorization: 'Bearer ' + _gcalToken } }
     );
     const calList = await calListRes.json();
-
+ 
     if (calList.error) {
       showToast('Calendar error: ' + calList.error.message); return;
     }
-
+ 
     const calendars = (calList.items || []).filter(c =>
       c.accessRole === 'owner' || c.accessRole === 'writer' || c.accessRole === 'reader'
     );
-
+ 
     if (calendars.length === 0) {
       showToast('No calendars found.'); return;
     }
-
+ 
     showToast(`Fetching from ${calendars.length} calendar${calendars.length!==1?'s':''}…`);
-
+ 
     // Step 2: fetch events from each calendar in parallel
     const allEvents = [];
     const seenIds = new Set();
-
+ 
     await Promise.all(calendars.map(async (cal) => {
       try {
         const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cal.id)}/events?`
@@ -1088,36 +1088,36 @@ async function gcalFetchAndImport() {
         console.warn('Could not fetch calendar:', cal.summary, e);
       }
     }));
-
+ 
     // Sort all events by start time
     allEvents.sort((a, b) => {
       const aTime = a.start?.dateTime || a.start?.date || '';
       const bTime = b.start?.dateTime || b.start?.date || '';
       return aTime.localeCompare(bTime);
     });
-
+ 
     if (allEvents.length === 0) {
       showToast('No upcoming events found in the next 30 days.');
       sv('gcal', { connected: true, email: me.email, lastSync: new Date().toISOString() });
       S.gcal = { connected: true, email: me.email, lastSync: new Date().toISOString() };
       render(); return;
     }
-
+ 
     // Show import review modal
     openImportModal(allEvents, me.email);
-
+ 
   } catch (err) {
     showToast('Could not reach Google Calendar. Check your internet.');
     console.error(err);
   }
 }
-
+ 
 /* ── Convert a Google Calendar event → FlowAI task ── */
 function gcalEventToTask(ev) {
   // Get date — handle all-day (date) vs timed (dateTime)
   const start = ev.start?.dateTime || ev.start?.date || todayStr();
   const dueDate = start.split('T')[0];
-
+ 
   // Guess category from calendar event keywords
   const title = (ev.summary || 'Untitled event').toLowerCase();
   let category = 'personal';
@@ -1125,14 +1125,14 @@ function gcalEventToTask(ev) {
     category = 'school';
   else if (/practice|rehearsal|club|team|game|match|training|sport|meet/.test(title))
     category = 'extracurricular';
-
+ 
   // Estimate duration from event length (if timed), else 1h default
   let estimatedHours = 1;
   if (ev.start?.dateTime && ev.end?.dateTime) {
     const diff = (new Date(ev.end.dateTime) - new Date(ev.start.dateTime)) / 3600000;
     estimatedHours = Math.max(0.25, Math.round(diff * 4) / 4);
   }
-
+ 
   return {
     id: 'gcal_' + (ev.id || genId()),
     title: ev.summary || 'Untitled event',
@@ -1148,10 +1148,10 @@ function gcalEventToTask(ev) {
     gcalImported: true,
   };
 }
-
+ 
 /* ── Import review modal ── */
 let _importDraft = []; // array of {ev, task, selected, alreadyExists}
-
+ 
 function openImportModal(events, email) {
   // Mark which ones are already imported
   const existingGcalIds = new Set(S.tasks.filter(t => t.gcalId).map(t => t.gcalId));
@@ -1161,11 +1161,27 @@ function openImportModal(events, email) {
     selected: !existingGcalIds.has(ev.id), // pre-select only new ones
     alreadyExists: existingGcalIds.has(ev.id),
   }));
-
+ 
   const ml = document.getElementById('modal-layer');
   ml.innerHTML = buildImportHTML(email);
+ 
+  // Event delegation for checkboxes and sliders
+  const list = document.getElementById('import-list');
+  if (list) {
+    list.addEventListener('change', function(e) {
+      const idx = e.target.dataset.idx;
+      const imp = e.target.dataset.imp;
+      if (idx !== undefined && e.target.type === 'checkbox') {
+        _importDraft[+idx].selected = e.target.checked;
+        refreshImportCount();
+      }
+      if (imp !== undefined && e.target.type === 'range') {
+        _importDraft[+imp].task.importance = +e.target.value;
+      }
+    });
+  }
 }
-
+ 
 function buildImportHTML(email) {
   const newCount  = _importDraft.filter(r => !r.alreadyExists).length;
   const skipCount = _importDraft.filter(r => r.alreadyExists).length;
@@ -1181,17 +1197,16 @@ function buildImportHTML(email) {
       <p style="font-size:12px;color:var(--text3);margin-bottom:16px">
         ${newCount} new event${newCount!==1?'s':''} · ${skipCount} already imported (unchecked)
       </p>
-
+ 
       <div style="display:flex;gap:8px;margin-bottom:12px">
         <button class="btn-sm" onclick="selectAllImport(true)">Select all</button>
         <button class="btn-sm" onclick="selectAllImport(false)">Deselect all</button>
       </div>
-
-      <div style="max-height:340px;overflow-y:auto;margin-bottom:16px">
+ 
+      <div id="import-list" style="max-height:340px;overflow-y:auto;margin-bottom:16px">
         ${_importDraft.map((r, i) => `
           <div class="import-row" style="${r.alreadyExists?'opacity:0.5':''}">
-            <input type="checkbox" ${r.selected?'checked':''} style="flex-shrink:0"
-              onchange="_importDraft[${i}].selected=this.checked;refreshImportCount()"/>
+            <input type="checkbox" data-idx="${i}" ${r.selected?'checked':''} style="flex-shrink:0;width:18px;height:18px;cursor:pointer;accent-color:var(--accent)"/>
             <div style="flex:1;min-width:0">
               <div style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
                 ${r.task.title}
@@ -1204,14 +1219,13 @@ function buildImportHTML(email) {
               </div>
               <div style="margin-top:4px">
                 <label style="font-size:11px;margin-bottom:2px">Importance</label>
-                <input type="range" min="1" max="5" step="1" value="${r.task.importance}"
-                  oninput="_importDraft[${i}].task.importance=+this.value"
+                <input type="range" data-imp="${i}" min="1" max="5" step="1" value="${r.task.importance}"
                   style="width:100%;max-width:160px"/>
               </div>
             </div>
           </div>`).join('')}
       </div>
-
+ 
       <div style="display:flex;align-items:center;justify-content:space-between">
         <span id="import-count" style="font-size:13px;color:var(--text2)">
           ${_importDraft.filter(r=>r.selected).length} selected
@@ -1226,19 +1240,18 @@ function buildImportHTML(email) {
     </div>
   </div>`;
 }
-
+ 
 window.selectAllImport = function(val) {
   _importDraft.forEach(r => { r.selected = val; });
-  // Refresh checkboxes
-  document.querySelectorAll('.import-row input[type=checkbox]')
-    .forEach((cb, i) => { cb.checked = _importDraft[i].selected; });
+  document.querySelectorAll('#import-list input[type=checkbox]')
+    .forEach(cb => { cb.checked = val; });
   refreshImportCount();
 };
 window.refreshImportCount = function() {
   const el = document.getElementById('import-count');
   if (el) el.textContent = _importDraft.filter(r=>r.selected).length + ' selected';
 };
-
+ 
 window.confirmImport = function(email) {
   const toAdd = _importDraft
     .filter(r => r.selected && !r.alreadyExists)
@@ -1246,7 +1259,7 @@ window.confirmImport = function(email) {
   const toUpdate = _importDraft
     .filter(r => r.selected && r.alreadyExists)
     .map(r => r.task);
-
+ 
   let newTasks = [...S.tasks];
   // Add new ones
   newTasks = [...newTasks, ...toAdd];
@@ -1255,21 +1268,21 @@ window.confirmImport = function(email) {
     const match = toUpdate.find(u => u.gcalId === t.gcalId);
     return match ? { ...t, importance: match.importance } : t;
   });
-
+ 
   const gcalState = { connected: true, email, lastSync: new Date().toISOString() };
   sv('gcal', gcalState);
   S.gcal = gcalState;
   update({ tasks: newTasks });
-
+ 
   closeImport();
   showToast(`✓ Imported ${toAdd.length} event${toAdd.length!==1?'s':''} as tasks`);
 };
-
+ 
 window.closeImport = function() {
   _importDraft = [];
   document.getElementById('modal-layer').innerHTML = '';
 };
-
+ 
 /* ── Setup guide modal (shown when Client ID not configured) ── */
 function openGcalSetupGuide() {
   const savedId = ld('gcalClientId','');
@@ -1283,7 +1296,7 @@ function openGcalSetupGuide() {
       <p style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.7">
         To sync your Google Calendar, you need a Client ID from the app developer. Once you have it, paste it below — setup takes less than a minute.
       </p>
-
+ 
       ${[
         ['1','Get the Client ID','Ask the FlowAI developer for the Client ID. It looks like a long string ending in <em>.apps.googleusercontent.com</em>'],
         ['2','Paste it below','Copy the Client ID and paste it into the box below'],
@@ -1297,7 +1310,7 @@ function openGcalSetupGuide() {
             <div style="font-size:12px;color:var(--text3);line-height:1.6">${desc}</div>
           </div>
         </div>`).join('')}
-
+ 
       <div style="background:rgba(124,106,247,0.07);border:1px solid rgba(124,106,247,0.2);border-radius:var(--radius-sm);padding:14px;margin-bottom:4px">
         <label style="color:var(--accent3);margin-bottom:8px">Paste your Client ID here</label>
         <div style="display:flex;gap:8px">
@@ -1308,7 +1321,7 @@ function openGcalSetupGuide() {
         </div>
         <div style="font-size:11px;color:var(--text3);margin-top:6px">Saved in your browser — you only need to do this once.</div>
       </div>
-
+ 
       <div class="brain-box" style="margin-top:12px">
         <strong>Privacy:</strong> Your calendar data goes directly from Google to your browser. FlowAI has no server — nothing is stored anywhere except your own device.
       </div>
@@ -1318,7 +1331,7 @@ function openGcalSetupGuide() {
     </div>
   </div>`;
 }
-
+ 
 window.saveClientIdAndConnect = function() {
   const val = document.getElementById('gcal-id-input')?.value?.trim();
   if (!val || !val.includes('.apps.googleusercontent.com')) {
@@ -1330,7 +1343,7 @@ window.saveClientIdAndConnect = function() {
   showToast('Client ID saved! Opening Google sign-in…');
   setTimeout(() => gcalConnectWithId(val), 400);
 };
-
+ 
 function gcalConnectWithId(clientId) {
   if (!window.google?.accounts?.oauth2) {
     showToast('Google library not loaded yet — try again in a moment.'); return;
@@ -1345,7 +1358,7 @@ function gcalConnectWithId(clientId) {
     },
   }).requestAccessToken();
 }
-
+ 
 /* ── Toast notification ── */
 function showToast(msg) {
   let t = document.getElementById('flowai-toast');
@@ -1360,27 +1373,27 @@ function showToast(msg) {
   clearTimeout(t._timer);
   t._timer = setTimeout(() => { t.style.opacity = '0'; }, 3000);
 }
-
+ 
 /* ── Sync again button ── */
 window.gcalSyncAgain = function() {
   if (!_gcalToken) { gcalConnect(); return; }
   gcalFetchAndImport();
 };
-
+ 
 /* ════════════════════════════════════════════════════════════════════
    LOGIN SYSTEM — PIN-based, stored as a hash in localStorage
    First launch: user creates a 4-digit PIN + name
    Subsequent launches: PIN entry screen
    Session persists for 8 hours so they don't re-enter constantly
    ════════════════════════════════════════════════════════════════════ */
-
+ 
 const AUTH = {
   pin:     ld('pin', null),       // stored as simple hash
   name:    ld('userName', ''),
   session: ld('session', 0),      // timestamp of last login
 };
 const SESSION_HOURS = 8;
-
+ 
 function hashPin(pin) {
   // Simple deterministic hash — good enough for a personal local app
   let h = 0;
@@ -1389,45 +1402,45 @@ function hashPin(pin) {
   }
   return h.toString(36);
 }
-
+ 
 function isSessionValid() {
   if (!AUTH.pin) return false; // no pin set yet
   const age = (Date.now() - AUTH.session) / 3600000;
   return age < SESSION_HOURS;
 }
-
+ 
 function startSession() {
   AUTH.session = Date.now();
   sv('session', AUTH.session);
 }
-
+ 
 /* ── PIN entry state ── */
 let _pin = '';
 let _pinMode = AUTH.pin ? 'enter' : 'create'; // 'create' | 'confirm' | 'enter'
 let _pinConfirm = '';
 let _pinName = '';
 let _pinError = '';
-
+ 
 function renderLogin() {
   const isCreate = _pinMode === 'create';
   const isConfirm = _pinMode === 'confirm';
   const isEnter = _pinMode === 'enter';
-
+ 
   const title = isCreate ? 'Create your PIN'
               : isConfirm ? 'Confirm your PIN'
               : `Welcome back${AUTH.name ? ', ' + AUTH.name.split(' ')[0] : ''}`;
-
+ 
   const subtitle = isCreate ? 'Choose a 4-digit PIN to secure your FlowAI'
                  : isConfirm ? 'Enter your PIN again to confirm'
                  : 'Enter your PIN to continue';
-
+ 
   const filledCount = _pin.length;
-
+ 
   document.getElementById('root').innerHTML = `
     <div class="login-screen" id="login-screen">
       <div class="login-logo" style="position:relative;z-index:1">FlowAI</div>
       <div class="login-tagline" style="position:relative;z-index:1">Beat procrastination with AI</div>
-
+ 
       <div class="login-card">
         ${isCreate ? `
           <div style="margin-bottom:16px">
@@ -1436,19 +1449,19 @@ function renderLogin() {
               oninput="_pinName=this.value" style="font-size:15px"/>
           </div>
         ` : ''}
-
+ 
         <div style="text-align:center">
           <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px">${title}</div>
           <div style="font-size:13px;color:var(--text3);margin-bottom:4px">${subtitle}</div>
           ${_pinError ? `<div style="font-size:12px;color:var(--coral);margin-top:4px">${_pinError}</div>` : ''}
         </div>
-
+ 
         <div class="pin-dots" id="pin-dots">
           ${[0,1,2,3].map(i => `
             <div class="pin-dot ${i < filledCount ? 'filled' : ''} ${_pinError ? 'error' : ''}" id="dot-${i}"></div>
           `).join('')}
         </div>
-
+ 
         <div class="numpad">
           ${[1,2,3,4,5,6,7,8,9].map(n => `
             <button class="numpad-btn" onclick="pinPress(${n})">${n}</button>
@@ -1457,7 +1470,7 @@ function renderLogin() {
           <button class="numpad-btn" onclick="pinPress(0)">0</button>
           <button class="numpad-btn del" onclick="pinDel()">⌫</button>
         </div>
-
+ 
         ${isEnter ? `
           <div style="text-align:center;margin-top:16px">
             <button class="btn-ghost btn-sm" style="font-size:12px;color:var(--text3)" onclick="forgotPin()">Forgot PIN? Reset app</button>
@@ -1466,7 +1479,7 @@ function renderLogin() {
       </div>
     </div>`;
 }
-
+ 
 function pinPress(digit) {
   if (_pin.length >= 4) return;
   _pinError = '';
@@ -1476,7 +1489,7 @@ function pinPress(digit) {
     setTimeout(() => handlePinComplete(), 120);
   }
 }
-
+ 
 function updatePinDots() {
   for (let i = 0; i < 4; i++) {
     const dot = document.getElementById('dot-' + i);
@@ -1484,7 +1497,7 @@ function updatePinDots() {
     dot.className = 'pin-dot' + (i < _pin.length ? ' filled' : '') + (_pinError ? ' error' : '');
   }
 }
-
+ 
 function pinDel() {
   if (_pin.length > 0) {
     _pin = _pin.slice(0, -1);
@@ -1492,7 +1505,7 @@ function pinDel() {
     updatePinDots();
   }
 }
-
+ 
 function handlePinComplete() {
   if (_pinMode === 'create') {
     if (_pin.length < 4) return;
@@ -1500,7 +1513,7 @@ function handlePinComplete() {
     _pin = '';
     _pinMode = 'confirm';
     renderLogin();
-
+ 
   } else if (_pinMode === 'confirm') {
     if (_pin === _pinConfirm) {
       // Save PIN and name
@@ -1520,7 +1533,7 @@ function handlePinComplete() {
       // Shake dots
       setTimeout(() => { _pinError = ''; renderLogin(); }, 1500);
     }
-
+ 
   } else if (_pinMode === 'enter') {
     if (hashPin(_pin) === AUTH.pin) {
       startSession();
@@ -1534,14 +1547,14 @@ function handlePinComplete() {
     }
   }
 }
-
+ 
 function enterApp() {
   // Fade out login screen
   const ls = document.getElementById('login-screen');
   if (ls) { ls.style.opacity = '0'; setTimeout(() => render(), 400); }
   else render();
 }
-
+ 
 function forgotPin() {
   const ml=document.getElementById('modal-layer');
   ml.innerHTML=`
@@ -1562,11 +1575,11 @@ function forgotPin() {
 }
 window.confirmReset=function(){localStorage.clear();location.reload();};
 window.closeForgot=function(){document.getElementById('modal-layer').innerHTML='';};
-
+ 
 window.pinPress = pinPress;
 window.pinDel = pinDel;
 window.forgotPin = forgotPin;
-
+ 
 function lockApp() {
   AUTH.session = 0;
   sv('session', 0);
@@ -1576,7 +1589,7 @@ function lockApp() {
   renderLogin();
 }
 window.lockApp = lockApp;
-
+ 
 /* ── Boot: show login or app ── */
 if (isSessionValid()) {
   render(); // session still active — go straight to app
