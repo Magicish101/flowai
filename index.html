@@ -1206,7 +1206,9 @@ function buildImportHTML(email) {
       <div id="import-list" style="max-height:340px;overflow-y:auto;margin-bottom:16px">
         ${_importDraft.map((r, i) => `
           <div class="import-row" style="${r.alreadyExists?'opacity:0.5':''}">
-            <input type="checkbox" data-idx="${i}" ${r.selected?'checked':''} style="flex-shrink:0;width:18px;height:18px;cursor:pointer;accent-color:var(--accent)"/>
+            <div id="chk-${i}" onclick="toggleImportCheck(${i})" style="flex-shrink:0;width:24px;height:24px;border-radius:6px;border:2px solid ${r.selected?'var(--accent)':'var(--border2)'};background:${r.selected?'var(--accent)':'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s">
+              ${r.selected?`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>`:''}
+            </div>
             <div style="flex:1;min-width:0">
               <div style="font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
                 ${r.task.title}
@@ -1241,10 +1243,28 @@ function buildImportHTML(email) {
   </div>`;
 }
  
+window.toggleImportCheck = function(i) {
+  _importDraft[i].selected = !_importDraft[i].selected;
+  const el = document.getElementById('chk-'+i);
+  if (el) {
+    const sel = _importDraft[i].selected;
+    el.style.background = sel ? 'var(--accent)' : 'transparent';
+    el.style.borderColor = sel ? 'var(--accent)' : 'var(--border2)';
+    el.innerHTML = sel ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>` : '';
+  }
+  refreshImportCount();
+};
+ 
 window.selectAllImport = function(val) {
-  _importDraft.forEach(r => { r.selected = val; });
-  document.querySelectorAll('#import-list input[type=checkbox]')
-    .forEach(cb => { cb.checked = val; });
+  _importDraft.forEach((r, i) => {
+    r.selected = val;
+    const el = document.getElementById('chk-'+i);
+    if (el) {
+      el.style.background = val ? 'var(--accent)' : 'transparent';
+      el.style.borderColor = val ? 'var(--accent)' : 'var(--border2)';
+      el.innerHTML = val ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>` : '';
+    }
+  });
   refreshImportCount();
 };
 window.refreshImportCount = function() {
