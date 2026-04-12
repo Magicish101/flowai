@@ -170,11 +170,17 @@ const BRAIN={
 
 /* ── Default week slots ────────────────────────────────────────────── */
 function defaultSlots(){
-  const ws=getWeekStart();
-  return['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((day,i)=>{
-    const date=new Date(ws.getTime()+i*86400000).toLocaleDateString('en-US',{month:'short',day:'numeric'});
-    const blocks=i<5?[{id:genId(),start:'15:00',end:'17:00'},{id:genId(),start:'19:00',end:'21:00'}]:[{id:genId(),start:'10:00',end:'12:00'}];
-    return{day,date,blocks};
+  const today=new Date();today.setHours(0,0,0,0);
+  const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  return Array.from({length:7},(_,i)=>{
+    const date=new Date(today.getTime()+i*86400000);
+    const dayName=DAYS[date.getDay()];
+    const dateStr=date.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const isWeekend=date.getDay()===0||date.getDay()===6;
+    const blocks=isWeekend
+      ?[{id:genId(),start:'10:00',end:'12:00'}]
+      :[{id:genId(),start:'15:00',end:'17:00'},{id:genId(),start:'19:00',end:'21:00'}];
+    return{day:dayName,date:dateStr,blocks};
   });
 }
 
@@ -373,7 +379,18 @@ window.nudge=nudge;window.insight=insight;
 let _sd=null; // setup draft
 
 function openSetup(){
-  _sd=S.weekSlots?JSON.parse(JSON.stringify(S.weekSlots)):defaultSlots();
+  // Always rebuild with fresh dates starting from today
+  const fresh=defaultSlots();
+  if(S.weekSlots){
+    // Preserve saved time blocks by matching day name
+    fresh.forEach(f=>{
+      const saved=S.weekSlots.find(s=>s.day===f.day);
+      if(saved&&saved.blocks&&saved.blocks.length>0){
+        f.blocks=saved.blocks;
+      }
+    });
+  }
+  _sd=fresh;
   const ml=document.getElementById('modal-layer');
   ml.innerHTML=buildSetupHTML();
 }
